@@ -1,11 +1,12 @@
 ## v1.5.2
 * Add distributed tracing support for Azure Functions client scenarios ([#211](https://github.com/microsoft/durabletask-java/pull/211))
 
-
 ## v1.5.1
 * Improve logging for unexpected connection failures in DurableTaskGrpcWorker ([#216](https://github.com/microsoft/durabletask-java/pull/216/files))
 * Add User-Agent Header to gRPC Metadata ([#213](https://github.com/microsoft/durabletask-java/pull/213))
 * Update protobuf definitions to include new properties in OrchestratorRequest and update source commit hash ([#214](https://github.com/microsoft/durabletask-java/pull/214))
+
+## placeholder
 * DTS Support ([#201](https://github.com/microsoft/durabletask-java/pull/201))
 * Add automatic proto file download and commit hash tracking during build ([#207](https://github.com/microsoft/durabletask-java/pull/207))
 * Fix infinite loop when use continueasnew after wait external event ([#183](https://github.com/microsoft/durabletask-java/pull/183))

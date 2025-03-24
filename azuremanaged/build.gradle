@@ -44,7 +44,10 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter-params:5.10.0'
     testImplementation 'org.mockito:mockito-core:5.3.1'
     testImplementation 'org.mockito:mockito-junit-jupiter:5.3.1'
+<<<<<<< HEAD
     testImplementation "io.grpc:grpc-netty:${grpcVersion}"
+=======
+>>>>>>> 2fc1b24 (Durable Task Scheduler SDK Support (#201))
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.10.0'
 }
 
@@ -62,7 +65,10 @@ compileTestJava {
 
 test {
     useJUnitPlatform()
+<<<<<<< HEAD
     include '**/*Test.class'
+=======
+>>>>>>> 2fc1b24 (Durable Task Scheduler SDK Support (#201))
 }
 
 publishing {
@@ -112,16 +118,20 @@ publishing {
     }
 }
 
+<<<<<<< HEAD
 signing {
     required = !project.hasProperty("skipSigning")
     sign publishing.publications.mavenJava
 }
 
+=======
+>>>>>>> 2fc1b24 (Durable Task Scheduler SDK Support (#201))
 java {
     withSourcesJar()
     withJavadocJar()
 }
 
+<<<<<<< HEAD
 spotbugs {
     toolVersion = '4.9.2'
     effort = 'max'
@@ -178,3 +188,5 @@ tasks.named('sourcesJar') {
     dependsOn generateVersionInfo
 }
 
+=======
+>>>>>>> 2fc1b24 (Durable Task Scheduler SDK Support (#201))
