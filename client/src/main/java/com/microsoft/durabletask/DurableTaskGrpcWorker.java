@@ -37,6 +37,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     private final ExecutorService workerPool;
 
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
+    private volatile boolean isNormalShutdown = false;
 
     DurableTaskGrpcWorker(DurableTaskGrpcWorkerBuilder builder) {
         this.orchestrationFactories.putAll(builder.orchestrationFactories);
@@ -220,6 +221,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * Stops the current worker's listen loop, preventing any new orchestrator or activity events from being processed.
      */
     public void stop() {
+        this.isNormalShutdown = true;
         this.close();
     }
 
@@ -236,7 +238,9 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     }
 
     private void shutDownWorkerPool() {
-        logger.log(Level.WARNING, "ExecutorService shutdown initiated. No new tasks will be accepted");
+        if (!this.isNormalShutdown) {
+            logger.log(Level.WARNING, "ExecutorService shutdown initiated unexpectedly. No new tasks will be accepted");
+        }
 
         this.workerPool.shutdown();
         try {
