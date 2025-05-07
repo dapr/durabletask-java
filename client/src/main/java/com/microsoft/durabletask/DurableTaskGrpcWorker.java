@@ -87,6 +87,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * configured.
      */
     public void close() {
+        this.isNormalShutdown = true;
         this.shutDownWorkerPool();
         this.closeSideCarChannel();
     }
@@ -221,7 +222,6 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * Stops the current worker's listen loop, preventing any new orchestrator or activity events from being processed.
      */
     public void stop() {
-        this.isNormalShutdown = true;
         this.close();
     }
 
