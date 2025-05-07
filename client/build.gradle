@@ -5,10 +5,11 @@ plugins {
     id 'idea'
     id 'maven-publish'
     id 'signing'
+    id 'com.github.spotbugs' version '5.2.1'
 }
 
 group 'com.microsoft'
-version = '1.5.0'
+version = '1.5.1'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.59.0'
@@ -17,7 +18,7 @@ def jacksonVersion = '2.15.3'
 // When build on local, you need to set this value to your local jdk11 directory.
 // Java11 is used to compile and run all the tests.
 // Example for Windows:  C:/Program Files/Java/openjdk-11.0.12_7/
-def PATH_TO_TEST_JAVA_RUNTIME = "$System.env.JDK_11"
+def PATH_TO_TEST_JAVA_RUNTIME = System.env.JDK_11 ?: System.getProperty("java.home")
 
 dependencies {
 
@@ -33,7 +34,7 @@ dependencies {
     implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
     implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
-
+    
     testImplementation(platform('org.junit:junit-bom:5.7.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
 }
@@ -49,6 +50,29 @@ compileTestJava {
     options.forkOptions.executable = "${PATH_TO_TEST_JAVA_RUNTIME}/bin/javac"
 }
 
+task downloadProtoFiles {
+    ext.branch = project.hasProperty('protoBranch') ? project.protoBranch : 'main'
+
+    doLast {
+        def protoDir = file("${rootProject.projectDir}/internal/durabletask-protobuf/protos")
+        protoDir.mkdirs()
+
+        // Download the proto file
+        new URL("https://raw.githubusercontent.com/microsoft/durabletask-protobuf/${ext.branch}/protos/orchestrator_service.proto")
+            .withInputStream { i -> 
+                new File(protoDir, 'orchestrator_service.proto').withOutputStream { it << i }
+            }
+
+        // Get and save the commit hash
+        def commitHashFile = new File("${rootProject.projectDir}/internal/durabletask-protobuf/PROTO_SOURCE_COMMIT_HASH")
+        def commitApiUrl = new URL("https://api.github.com/repos/microsoft/durabletask-protobuf/commits?path=protos/orchestrator_service.proto&sha=${ext.branch}&per_page=1")
+        def connection = commitApiUrl.openConnection()
+        connection.setRequestProperty('Accept', 'application/vnd.github.v3+json')
+        def commitHash = new groovy.json.JsonSlurper().parse(connection.inputStream)[0].sha
+        commitHashFile.text = commitHash
+    }
+}
+
 protobuf {
     protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
     plugins {
@@ -56,13 +80,14 @@ protobuf {
     }
     generateProtoTasks {
         all()*.plugins { grpc {} }
+        all()*.dependsOn downloadProtoFiles
     }
 }
 
 sourceSets {
     main {
         proto {
-            srcDir '../submodules/durabletask-protobuf/protos'
+            srcDir '../internal/durabletask-protobuf/protos'
         }
         java {
             srcDirs 'build/generated/source/proto/main/grpc'
@@ -94,6 +119,8 @@ task integrationTest(type: Test) {
     dependsOn build
     shouldRunAfter test
     testLogging.showStandardStreams = true
+
+    ignoreFailures = false
 }
 
 publishing {
@@ -146,12 +173,44 @@ publishing {
     }
 }
 
-// TODO: manual signing temporarily disabled, in favor of 1ES signing
-//signing {
-//    sign publishing.publications.mavenJava
-//}
+signing {
+   required = !project.hasProperty("skipSigning")
+   sign publishing.publications.mavenJava
+}
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+spotbugs {
+    toolVersion = '4.9.2'
+    effort = 'max'
+    reportLevel = 'high'
+    ignoreFailures = true
+    excludeFilter = file('spotbugs-exclude.xml')
+}
+
+spotbugsMain {
+    reports {
+        html {
+            required = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+        xml {
+            required = true
+        }
+    }
+}
+
+spotbugsTest {
+    reports {
+        html {
+            required = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+        xml {
+            required = true
+        }
+    }
 }

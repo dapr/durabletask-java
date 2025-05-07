@@ -1,17 +1,37 @@
 plugins {
     id 'org.springframework.boot' version '2.5.2'
     id 'java'
-    id 'application'
 }
 
 group 'io.durabletask'
 version = '0.1.0'
+def grpcVersion = '1.59.0'
 archivesBaseName = 'durabletask-samples'
+
+bootJar {
+    mainClass = 'io.durabletask.samples.WebApplication'
+}
+
+task runWebAppToDurableTaskSchedulerSample(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.durabletask.samples.WebAppToDurableTaskSchedulerSample'
+}
 
 dependencies {
     implementation project(':client')
-    
+    implementation project(':azuremanaged')
+
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation platform("org.springframework.boot:spring-boot-dependencies:2.5.2")
     implementation 'org.springframework.boot:spring-boot-starter'
+
+    // https://github.com/grpc/grpc-java#download
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation 'com.azure:azure-identity:1.15.0'
+
+    // install lombok
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    compileOnly 'org.projectlombok:lombok:1.18.22'
 }

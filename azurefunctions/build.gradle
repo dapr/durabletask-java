@@ -2,10 +2,11 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
+    id 'com.github.spotbugs' version '5.2.1'
 }
 
 group 'com.microsoft'
-version = '1.5.0'
+version = '1.5.1'
 archivesBaseName = 'durabletask-azure-functions'
 
 def protocVersion = '3.12.0'
@@ -76,12 +77,44 @@ publishing {
     }
 }
 
-// TODO: manual signing temporarily disabled, in favor of 1ES signing utils
-//signing {
-//    sign publishing.publications.mavenJava
-//}
+signing {
+   required = !project.hasProperty("skipSigning")
+   sign publishing.publications.mavenJava
+}
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+spotbugs {
+    toolVersion = '4.9.2'
+    effort = 'max'
+    reportLevel = 'high'
+    ignoreFailures = true
+    excludeFilter = file('spotbugs-exclude.xml')
+}
+
+spotbugsMain {
+    reports {
+        html {
+            required = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+        xml {
+            required = true
+        }
+    }
+}
+
+spotbugsTest {
+    reports {
+        html {
+            required = true
+            stylesheet = 'fancy-hist.xsl'
+        }
+        xml {
+            required = true
+        }
+    }
 }

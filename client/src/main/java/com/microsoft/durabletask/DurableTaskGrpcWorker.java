@@ -136,6 +136,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                     .setInstanceId(orchestratorRequest.getInstanceId())
                                     .addAllActions(taskOrchestratorResult.getActions())
                                     .setCustomStatus(StringValue.of(taskOrchestratorResult.getCustomStatus()))
+                                    .setCompletionToken(workItem.getCompletionToken())
                                     .build();
 
                             try {
@@ -171,7 +172,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
 
                             ActivityResponse.Builder responseBuilder = ActivityResponse.newBuilder()
                                     .setInstanceId(activityRequest.getOrchestrationInstance().getInstanceId())
-                                    .setTaskId(activityRequest.getTaskId());
+                                    .setTaskId(activityRequest.getTaskId())
+                                    .setCompletionToken(workItem.getCompletionToken());
 
                             if (output != null) {
                                 responseBuilder.setResult(StringValue.of(output));
@@ -193,6 +195,10 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                 }
                             }
                         });
+                    } 
+                    else if (requestType == RequestCase.HEALTHPING)
+                    {
+                        // No-op
                     } else {
                         logger.log(Level.WARNING, "Received and dropped an unknown '{0}' work-item from the sidecar.", requestType);
                     }
@@ -203,7 +209,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 } else if (e.getStatus().getCode() == Status.Code.CANCELLED) {
                     logger.log(Level.INFO, "Durable Task worker has disconnected from {0}.", this.getSidecarAddress());
                 } else {
-                    logger.log(Level.WARNING, "Unexpected failure connecting to {0}.", this.getSidecarAddress());
+                    logger.log(Level.WARNING, String.format("Unexpected failure connecting to %s", this.getSidecarAddress()), e);
                 }
 
                 // Retry after 5 seconds
