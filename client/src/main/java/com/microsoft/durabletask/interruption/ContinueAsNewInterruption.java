@@ -1,4 +1,4 @@
-package com.microsoft.durabletask.interruption;
+package io.dapr.durabletask.interruption;
 
 import com.microsoft.durabletask.TaskOrchestrationContext;
 

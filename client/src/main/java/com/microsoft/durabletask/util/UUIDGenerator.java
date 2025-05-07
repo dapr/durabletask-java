@@ -1,4 +1,4 @@
-package com.microsoft.durabletask.util;
+package io.dapr.durabletask.util;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;

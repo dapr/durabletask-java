@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-package com.microsoft.durabletask.interruption;
+package io.dapr.durabletask.interruption;
 
 import com.microsoft.durabletask.Task;
 

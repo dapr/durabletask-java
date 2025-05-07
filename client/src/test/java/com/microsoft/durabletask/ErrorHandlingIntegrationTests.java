@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
 
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
