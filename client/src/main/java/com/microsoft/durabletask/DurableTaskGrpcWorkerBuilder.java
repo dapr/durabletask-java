@@ -6,6 +6,9 @@ import io.grpc.Channel;
 
 import java.time.Duration;
 import java.util.HashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Builder object for constructing customized {@link DurableTaskGrpcWorker} instances.
@@ -17,6 +20,7 @@ public final class DurableTaskGrpcWorkerBuilder {
     Channel channel;
     DataConverter dataConverter;
     Duration maximumTimerInterval;
+    ExecutorService executorService;
 
     /**
      * Adds an orchestration factory to be used by the constructed {@link DurableTaskGrpcWorker}.
@@ -110,6 +114,17 @@ public final class DurableTaskGrpcWorkerBuilder {
      */
     public DurableTaskGrpcWorkerBuilder maximumTimerInterval(Duration maximumTimerInterval) {
         this.maximumTimerInterval = maximumTimerInterval;
+        return this;
+    }
+
+    /**
+     * Sets the executor service that will be used to execute threads.
+     *
+     * @param executorService {@link ExecutorService}.
+     * @return this builder object.
+     */
+    public DurableTaskGrpcWorkerBuilder withExecutorService(ExecutorService executorService) {
+        this.executorService = executorService;
         return this;
     }
 

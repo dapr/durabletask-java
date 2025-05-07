@@ -65,7 +65,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
         this.maximumTimerInterval = builder.maximumTimerInterval != null ? builder.maximumTimerInterval : DEFAULT_MAXIMUM_TIMER_INTERVAL;
-        this.workerPool = Executors.newCachedThreadPool();
+        this.workerPool = builder.executorService;
     }
 
     /**
@@ -86,20 +86,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * configured.
      */
     public void close() {
-        this.closeSideCarChannel();
         this.shutDownWorkerPool();
-    }
-
-    private void closeSideCarChannel() {
-        if (this.managedSidecarChannel != null) {
-            try {
-                this.managedSidecarChannel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
-            } catch (InterruptedException e) {
-                // Best effort. Also note that AutoClose documentation recommends NOT having
-                // close() methods throw InterruptedException:
-                // https://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html
-            }
-        }
+        this.closeSideCarChannel();
     }
 
     /**
@@ -211,6 +199,18 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      */
     public void stop() {
         this.close();
+    }
+
+    private void closeSideCarChannel() {
+        if (this.managedSidecarChannel != null) {
+            try {
+                this.managedSidecarChannel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                // Best effort. Also note that AutoClose documentation recommends NOT having
+                // close() methods throw InterruptedException:
+                // https://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html
+            }
+        }
     }
 
     private void shutDownWorkerPool() {
