@@ -8,7 +8,7 @@ plugins {
     id 'com.github.spotbugs' version '5.2.1'
 }
 
-group 'com.microsoft'
+group 'io.dapr'
 version = '1.5.1'
 archivesBaseName = 'durabletask-client'
 
