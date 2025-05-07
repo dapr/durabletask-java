@@ -87,10 +87,7 @@ protobuf {
     generateProtoTasks {
         all()*.plugins { grpc {} }
         all()*.dependsOn downloadProtoFiles
-        all()*.doLast {
-            def protocTask = it
-            protocTask.args += ["--experimental_allow_proto3_optional"]
-        }
+        all()*.options.add("--experimental_allow_proto3_optional")
     }
 }
 
