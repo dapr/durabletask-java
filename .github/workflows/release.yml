@@ -42,7 +42,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build with Gradle
-        run: ./gradlew build -x test
+        run: ./gradlew build -x test -PGPG_KEY=$GPG_KEY -PGPG_PWD=$GPG_PWD
 
       - name: Run SpotBugs
         run: ./gradlew spotbugsMain spotbugsTest
