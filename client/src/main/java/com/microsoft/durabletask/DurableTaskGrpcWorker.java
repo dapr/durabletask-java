@@ -86,6 +86,11 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * configured.
      */
     public void close() {
+        this.closeSideCarChannel();
+        this.shutDownWorkerPool();
+    }
+
+    private void closeSideCarChannel() {
         if (this.managedSidecarChannel != null) {
             try {
                 this.managedSidecarChannel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
@@ -95,10 +100,6 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 // https://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html
             }
         }
-    }
-
-    private String getSidecarAddress() {
-        return this.sidecarClient.getChannel().authority();
     }
 
     /**
@@ -125,7 +126,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 logger);
 
         // TODO: How do we interrupt manually?
-        while (true) {
+        while (!this.workerPool.isShutdown()) {
             try {
                 GetWorkItemsRequest getWorkItemsRequest = GetWorkItemsRequest.newBuilder().build();
                 Iterator<WorkItem> workItemStream = this.sidecarClient.getWorkItems(getWorkItemsRequest);
@@ -212,5 +213,20 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      */
     public void stop() {
         this.close();
+    }
+
+    private void shutDownWorkerPool() {
+        this.workerPool.shutdown();
+        try {
+            if (!this.workerPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                this.workerPool.shutdownNow();
+            }
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private String getSidecarAddress() {
+        return this.sidecarClient.getChannel().authority();
     }
 }
