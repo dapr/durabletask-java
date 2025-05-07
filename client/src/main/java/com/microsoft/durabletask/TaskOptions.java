@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 /**
  * Options that can be used to control the behavior of orchestrator and activity task execution.

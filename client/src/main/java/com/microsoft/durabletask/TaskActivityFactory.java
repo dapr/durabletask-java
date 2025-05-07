@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 /**
  * Factory interface for producing {@link TaskActivity} implementations.

@@ -1,4 +1,4 @@
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 import com.microsoft.durabletask.implementation.protobuf.OrchestratorService;
 
