@@ -19,99 +19,99 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-    - name: Set up JDK 11
-      uses: actions/setup-java@v2
-      with:
-        java-version: '11'
-        distribution: 'microsoft'
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'microsoft'
 
-    - name: set JDK_11 environment variable test compiling and running
-      env:
-        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-      run: echo ::set-env name=JDK_11::$(echo $JAVA_HOME)
+      - name: set JDK_11 environment variable test compiling and running
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+        run: echo ::set-env name=JDK_11::$(echo $JAVA_HOME)
 
-    - name: Set up JDK 8
-      uses: actions/setup-java@v2
-      with:
-        java-version: '8'
-        distribution: 'temurin'
+      - name: Set up JDK 8
+        uses: actions/setup-java@v2
+        with:
+          java-version: '8'
+          distribution: 'temurin'
 
-    - name: Setup Gradle
-      uses: gradle/gradle-build-action@v2
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
 
-    - name: Build with Gradle
-      run: ./gradlew build -x test
-    
-    - name: Run SpotBugs
-      run: ./gradlew spotbugsMain spotbugsTest
-      continue-on-error: false
-      
-    - name: Upload SpotBugs reports
-      uses: actions/upload-artifact@v4
-      with:
-        name: SpotBugs Reports
-        path: '**/build/reports/spotbugs'
-        if-no-files-found: ignore
-    
-    - name: Run Unit Tests with Gradle
-      run: |
-        export JAVA_HOME=$JDK_11
-        ./gradlew clean test || echo "UNIT_TEST_FAILED=true" >> $GITHUB_ENV
-      continue-on-error: true
+      - name: Build with Gradle
+        run: ./gradlew build -x test
 
-    - name: Upload test reports if tests failed
-      if: env.UNIT_TEST_FAILED == 'true'
-      uses: actions/upload-artifact@v4
-      with:
-        name: Unit Test Reports
-        path: '**/build/reports/tests/test'
-        if-no-files-found: ignore  # Prevents errors if no reports exist
-    
-    - name: Fail the job if unit tests failed
-      if: env.UNIT_TEST_FAILED == 'true'
-      run: exit 1
+      - name: Run SpotBugs
+        run: ./gradlew spotbugsMain spotbugsTest
+        continue-on-error: false
 
-      # TODO: Move the sidecar into a central image repository
-    - name: Initialize Durable Task Sidecar
-      run: docker run --name durabletask-sidecar -p 4001:4001 --env 'DURABLETASK_SIDECAR_LOGLEVEL=Debug' -d peterstone2019/durabletask-sidecar:latest start --backend Emulator
+      - name: Upload SpotBugs reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: SpotBugs Reports
+          path: '**/build/reports/spotbugs'
+          if-no-files-found: ignore
 
-    - name: Display Durable Task Sidecar Logs
-      run: nohup docker logs --since=0 durabletask-sidecar > durabletask-sidecar.log 2>&1 &
+      - name: Run Unit Tests with Gradle
+        run: |
+          export JAVA_HOME=$JDK_11
+          ./gradlew clean test || echo "UNIT_TEST_FAILED=true" >> $GITHUB_ENV
+        continue-on-error: true
 
-      # wait for 10 seconds, so sidecar container can be fully up, this will avoid intermittent failing issues for integration tests causing by failed to connect to sidecar
-    - name: Wait for 10 seconds
-      run: sleep 10
+      - name: Upload test reports if tests failed
+        if: env.UNIT_TEST_FAILED == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Unit Test Reports
+          path: '**/build/reports/tests/test'
+          if-no-files-found: ignore  # Prevents errors if no reports exist
 
-    - name: Integration Tests with Gradle
-      run: ./gradlew integrationTest || echo "TEST_FAILED=true" >> $GITHUB_ENV
-      continue-on-error: true
+      - name: Fail the job if unit tests failed
+        if: env.UNIT_TEST_FAILED == 'true'
+        run: exit 1
 
-    - name: Kill Durable Task Sidecar
-      run: docker kill durabletask-sidecar
-    
-    - name: Upload Durable Task Sidecar Logs
-      uses: actions/upload-artifact@v4
-      with:
-        name: Durable Task Sidecar Logs
-        path: durabletask-sidecar.log
+        # TODO: Move the sidecar into a central image repository
+      - name: Initialize Durable Task Sidecar
+        run: docker run --name durabletask-sidecar -p 4001:4001 --env 'DURABLETASK_SIDECAR_LOGLEVEL=Debug' -d peterstone2019/durabletask-sidecar:latest start --backend Emulator
 
-    - name: Archive test report
-      uses: actions/upload-artifact@v4
-      with:
-        name: Integration test report
-        path: client/build/reports/tests/integrationTest
+      - name: Display Durable Task Sidecar Logs
+        run: nohup docker logs --since=0 durabletask-sidecar > durabletask-sidecar.log 2>&1 &
 
-    - name: Upload JAR output
-      uses: actions/upload-artifact@v4
-      with:
-        name: Package
-        path: client/build/libs
+        # wait for 10 seconds, so sidecar container can be fully up, this will avoid intermittent failing issues for integration tests causing by failed to connect to sidecar
+      - name: Wait for 10 seconds
+        run: sleep 10
 
-    - name: Fail the job if tests failed
-      if: env.TEST_FAILED == 'true'
-      run: exit 1
+      - name: Integration Tests with Gradle
+        run: ./gradlew integrationTest || echo "TEST_FAILED=true" >> $GITHUB_ENV
+        continue-on-error: true
+
+      - name: Kill Durable Task Sidecar
+        run: docker kill durabletask-sidecar
+
+      - name: Upload Durable Task Sidecar Logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: Durable Task Sidecar Logs
+          path: durabletask-sidecar.log
+
+      - name: Archive test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: Integration test report
+          path: client/build/reports/tests/integrationTest
+
+      - name: Upload JAR output
+        uses: actions/upload-artifact@v4
+        with:
+          name: Package
+          path: client/build/libs
+
+      - name: Fail the job if tests failed
+        if: env.TEST_FAILED == 'true'
+        run: exit 1
 
   functions-e2e-tests:
 
