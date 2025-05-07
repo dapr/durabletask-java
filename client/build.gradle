@@ -80,7 +80,6 @@ task downloadProtoFiles {
 protobuf {
     protoc { 
         artifact = "com.google.protobuf:protoc:${protocVersion}"
-        options = ["--experimental_allow_proto3_optional"]  // Make sure to add the option for proto3 optional fields
     }
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
@@ -88,6 +87,7 @@ protobuf {
     generateProtoTasks {
         all()*.plugins { grpc {} }
         all()*.dependsOn downloadProtoFiles
+        all()*.options = ["--experimental_allow_proto3_optional"]  // Correctly add options here
     }
 }
 
