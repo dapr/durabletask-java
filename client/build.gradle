@@ -13,7 +13,7 @@ version = '1.5.2'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.59.0'
-def protocVersion = '3.12.0'
+def protocVersion = '3.19.0'
 def jacksonVersion = '2.15.3'
 // When build on local, you need to set this value to your local jdk11 directory.
 // Java11 is used to compile and run all the tests.
@@ -58,14 +58,14 @@ task downloadProtoFiles {
         protoDir.mkdirs()
 
         // Download the proto file
-        new URL("https://raw.githubusercontent.com/microsoft/durabletask-protobuf/${ext.branch}/protos/orchestrator_service.proto")
+        new URL("https://raw.githubusercontent.com/dapr/durabletask-protobuf/${ext.branch}/protos/orchestrator_service.proto")
             .withInputStream { i -> 
                 new File(protoDir, 'orchestrator_service.proto').withOutputStream { it << i }
             }
 
         // Get and save the commit hash
         def commitHashFile = new File("${rootProject.projectDir}/internal/durabletask-protobuf/PROTO_SOURCE_COMMIT_HASH")
-        def commitApiUrl = new URL("https://api.github.com/repos/microsoft/durabletask-protobuf/commits?path=protos/orchestrator_service.proto&sha=${ext.branch}&per_page=1")
+        def commitApiUrl = new URL("https://api.github.com/repos/dapr/durabletask-protobuf/commits?path=protos/orchestrator_service.proto&sha=${ext.branch}&per_page=1")
         def connection = commitApiUrl.openConnection()
         connection.setRequestProperty('Accept', 'application/vnd.github.v3+json')
         def commitHash = new groovy.json.JsonSlurper().parse(connection.inputStream)[0].sha
@@ -74,7 +74,9 @@ task downloadProtoFiles {
 }
 
 protobuf {
-    protoc { artifact = "com.google.protobuf:protoc:${protocVersion}" }
+    protoc { 
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+    }
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
     }
@@ -136,7 +138,7 @@ publishing {
             pom {
                 name = 'Durable Task Client SDK for Java'
                 description = 'This package contains classes and interfaces for building Durable Task orchestrations in Java.'
-                url = "https://github.com/microsoft/durabletask-java/tree/main/client"
+                url = "https://github.com/dapr/durabletask-java/tree/main/client"
                 licenses {
                     license {
                         name = "MIT License"
@@ -146,14 +148,14 @@ publishing {
                 }
                 developers {
                     developer {
-                        id = "Microsoft"
-                        name = "Microsoft Corporation"
+                        id = "Dapr"
+                        name = "Dapr"
                     }
                 }
                 scm {
-                    connection = "scm:git:https://github.com/microsoft/durabletask-java"
-                    developerConnection = "scm:git:git@github.com:microsoft/durabletask-java"
-                    url = "https://github.com/microsoft/durabletask-java/tree/main/client"
+                    connection = "scm:git:https://github.com/dapr/durabletask-java"
+                    developerConnection = "scm:git:git@github.com:dapr/durabletask-java"
+                    url = "https://github.com/dapr/durabletask-java/tree/main/client"
                 }
                 // use below script to include compile-only dependencies when generated pom file.
                 // This is pain point when we onboard API docs as the missing compile-only dependencies crash the
@@ -174,8 +176,11 @@ publishing {
 }
 
 signing {
-   required = !project.hasProperty("skipSigning")
-   sign publishing.publications.mavenJava
+    sign publishing.publications.mavenJava
+    useInMemoryPgpKeys(
+            findProperty("GPG_KEY"),
+            findProperty("GPG_PWD")
+    )
 }
 
 java {
