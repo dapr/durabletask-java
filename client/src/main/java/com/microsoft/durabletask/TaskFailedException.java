@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 /**
  * Exception that gets thrown when awaiting a {@link Task} for an activity or sub-orchestration that fails with an

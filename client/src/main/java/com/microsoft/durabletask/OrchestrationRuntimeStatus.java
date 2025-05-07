@@ -1,6 +1,6 @@
 // Copyright (c) Microsoft Corporation. All rights reserved.
 // Licensed under the MIT License.
-package com.microsoft.durabletask;
+package io.dapr.durabletask;
 
 import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.*;
 import static com.microsoft.durabletask.implementation.protobuf.OrchestratorService.OrchestrationStatus.*;
