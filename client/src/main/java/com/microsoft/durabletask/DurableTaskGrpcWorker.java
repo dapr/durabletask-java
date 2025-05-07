@@ -13,6 +13,8 @@ import io.grpc.*;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,6 +23,7 @@ import java.util.logging.Logger;
  * Task hub worker that connects to a sidecar process over gRPC to execute orchestrator and activity events.
  */
 public final class DurableTaskGrpcWorker implements AutoCloseable {
+
     private static final int DEFAULT_PORT = 4001;
     private static final Logger logger = Logger.getLogger(DurableTaskGrpcWorker.class.getPackage().getName());
     private static final Duration DEFAULT_MAXIMUM_TIMER_INTERVAL = Duration.ofDays(3);
@@ -31,6 +34,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     private final ManagedChannel managedSidecarChannel;
     private final DataConverter dataConverter;
     private final Duration maximumTimerInterval;
+    private final ExecutorService workerPool;
 
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
 
@@ -61,6 +65,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
         this.maximumTimerInterval = builder.maximumTimerInterval != null ? builder.maximumTimerInterval : DEFAULT_MAXIMUM_TIMER_INTERVAL;
+        this.workerPool = Executors.newCachedThreadPool();
     }
 
     /**
@@ -130,57 +135,55 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                     if (requestType == RequestCase.ORCHESTRATORREQUEST) {
                         OrchestratorRequest orchestratorRequest = workItem.getOrchestratorRequest();
 
-                        // TODO: Run this on a worker pool thread: https://www.baeldung.com/thread-pool-java-and-guava
                         // TODO: Error handling
-                        TaskOrchestratorResult taskOrchestratorResult = taskOrchestrationExecutor.execute(
-                                orchestratorRequest.getPastEventsList(),
-                                orchestratorRequest.getNewEventsList());
+                        this.workerPool.submit(() -> {
+                            TaskOrchestratorResult taskOrchestratorResult = taskOrchestrationExecutor.execute(
+                                    orchestratorRequest.getPastEventsList(),
+                                    orchestratorRequest.getNewEventsList());
 
-                        OrchestratorResponse response = OrchestratorResponse.newBuilder()
-                                .setInstanceId(orchestratorRequest.getInstanceId())
-                                .addAllActions(taskOrchestratorResult.getActions())
-                                .setCustomStatus(StringValue.of(taskOrchestratorResult.getCustomStatus()))
-                                .setCompletionToken(workItem.getCompletionToken())
-                                .build();
+                            OrchestratorResponse response = OrchestratorResponse.newBuilder()
+                                    .setInstanceId(orchestratorRequest.getInstanceId())
+                                    .addAllActions(taskOrchestratorResult.getActions())
+                                    .setCustomStatus(StringValue.of(taskOrchestratorResult.getCustomStatus()))
+                                    .setCompletionToken(workItem.getCompletionToken())
+                                    .build();
 
-                        this.sidecarClient.completeOrchestratorTask(response);
+                            this.sidecarClient.completeOrchestratorTask(response);
+                        });
                     } else if (requestType == RequestCase.ACTIVITYREQUEST) {
                         ActivityRequest activityRequest = workItem.getActivityRequest();
 
-                        // TODO: Run this on a worker pool thread: https://www.baeldung.com/thread-pool-java-and-guava
-                        String output = null;
-                        TaskFailureDetails failureDetails = null;
-                        try {
-                            output = taskActivityExecutor.execute(
-                                activityRequest.getName(),
-                                activityRequest.getInput().getValue(),
-                                activityRequest.getTaskId());
-                        } catch (Throwable e) {
-                            failureDetails = TaskFailureDetails.newBuilder()
-                                .setErrorType(e.getClass().getName())
-                                .setErrorMessage(e.getMessage())
-                                .setStackTrace(StringValue.of(FailureDetails.getFullStackTrace(e)))
-                                .build();
-                        }
+                        this.workerPool.submit(() -> {
+                            String output = null;
+                            TaskFailureDetails failureDetails = null;
+                            try {
+                                output = taskActivityExecutor.execute(
+                                        activityRequest.getName(),
+                                        activityRequest.getInput().getValue(),
+                                        activityRequest.getTaskId());
+                            } catch (Throwable e) {
+                                failureDetails = TaskFailureDetails.newBuilder()
+                                        .setErrorType(e.getClass().getName())
+                                        .setErrorMessage(e.getMessage())
+                                        .setStackTrace(StringValue.of(FailureDetails.getFullStackTrace(e)))
+                                        .build();
+                            }
 
-                        ActivityResponse.Builder responseBuilder = ActivityResponse.newBuilder()
-                                .setInstanceId(activityRequest.getOrchestrationInstance().getInstanceId())
-                                .setTaskId(activityRequest.getTaskId())
-                                .setCompletionToken(workItem.getCompletionToken());
+                            ActivityResponse.Builder responseBuilder = ActivityResponse.newBuilder()
+                                    .setInstanceId(activityRequest.getOrchestrationInstance().getInstanceId())
+                                    .setTaskId(activityRequest.getTaskId())
+                                    .setCompletionToken(workItem.getCompletionToken());
 
-                        if (output != null) {
-                            responseBuilder.setResult(StringValue.of(output));
-                        }
+                            if (output != null) {
+                                responseBuilder.setResult(StringValue.of(output));
+                            }
 
-                        if (failureDetails != null) {
-                            responseBuilder.setFailureDetails(failureDetails);
-                        }
+                            if (failureDetails != null) {
+                                responseBuilder.setFailureDetails(failureDetails);
+                            }
 
-                        this.sidecarClient.completeActivityTask(responseBuilder.build());
-                    } 
-                    else if (requestType == RequestCase.HEALTHPING)
-                    {
-                        // No-op
+                            this.sidecarClient.completeActivityTask(responseBuilder.build());
+                        });
                     } else {
                         logger.log(Level.WARNING, "Received and dropped an unknown '{0}' work-item from the sidecar.", requestType);
                     }
@@ -189,7 +192,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
                     logger.log(Level.INFO, "The sidecar at address {0} is unavailable. Will continue retrying.", this.getSidecarAddress());
                 } else if (e.getStatus().getCode() == Status.Code.CANCELLED) {
-                    logger.log(Level.INFO, "Durable Task worker has disconnected from {0}.", this.getSidecarAddress()); 
+                    logger.log(Level.INFO, "Durable Task worker has disconnected from {0}.", this.getSidecarAddress());
                 } else {
                     logger.log(Level.WARNING, String.format("Unexpected failure connecting to %s", this.getSidecarAddress()), e);
                 }
