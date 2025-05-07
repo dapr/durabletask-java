@@ -65,7 +65,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
         this.maximumTimerInterval = builder.maximumTimerInterval != null ? builder.maximumTimerInterval : DEFAULT_MAXIMUM_TIMER_INTERVAL;
-        this.workerPool = builder.executorService;
+        this.workerPool = builder.executorService != null ? builder.executorService : Executors.newCachedThreadPool();
     }
 
     /**
