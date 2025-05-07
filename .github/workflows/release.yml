@@ -17,8 +17,6 @@ jobs:
       JDK_VER: 11
       OSSRH_USER_TOKEN: ${{ secrets.OSSRH_USER_TOKEN }}
       OSSRH_PWD_TOKEN: ${{ secrets.OSSRH_PWD_TOKEN }}
-      GPG_KEY: ${{ secrets.GPG_KEY }}
-      GPG_PWD: ${{ secrets.GPG_PWD }}
     steps:
       - uses: actions/checkout@v2
       - name: Set up JDK 11
@@ -42,7 +40,7 @@ jobs:
         uses: gradle/gradle-build-action@v2
 
       - name: Build with Gradle
-        run: ./gradlew build -x test -PGPG_KEY=$GPG_KEY -PGPG_PWD=$GPG_PWD
+        run: ./gradlew build -x test
 
       - name: Run SpotBugs
         run: ./gradlew spotbugsMain spotbugsTest
