@@ -8,8 +8,8 @@ plugins {
     id 'com.github.spotbugs' version '5.2.1'
 }
 
-group 'com.microsoft'
-version = '1.5.1'
+group 'io.dapr'
+version = '1.5.2'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.59.0'
