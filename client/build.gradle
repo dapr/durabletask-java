@@ -178,8 +178,11 @@ publishing {
 }
 
 signing {
-   required = !project.hasProperty("skipSigning")
-   sign publishing.publications.mavenJava
+    sign publishing.publications.mavenJava
+    useInMemoryPgpKeys(
+            findProperty("GPG_KEY"),
+            findProperty("GPG_PWD")
+    )
 }
 
 java {
@@ -217,8 +220,4 @@ spotbugsTest {
             required = true
         }
     }
-}
-
-mavenSettings {
-    userSettingsFileName = "../settings.xml"
 }
