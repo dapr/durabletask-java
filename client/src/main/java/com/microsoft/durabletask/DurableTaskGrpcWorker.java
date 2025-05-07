@@ -216,6 +216,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     }
 
     private void shutDownWorkerPool() {
+        logger.log(Level.WARNING, "ExecutorService shutdown initiated. No new tasks will be accepted");
+
         this.workerPool.shutdown();
         try {
             if (!this.workerPool.awaitTermination(60, TimeUnit.SECONDS)) {
