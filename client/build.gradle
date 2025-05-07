@@ -80,8 +80,7 @@ task downloadProtoFiles {
 protobuf {
     protoc { 
         artifact = "com.google.protobuf:protoc:${protocVersion}"
-        // Add experimental flag for proto3 optional fields
-        options.add("--experimental_allow_proto3_optional")
+        options = ["--experimental_allow_proto3_optional"]  // Make sure to add the option for proto3 optional fields
     }
     plugins {
         grpc { artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}" }
