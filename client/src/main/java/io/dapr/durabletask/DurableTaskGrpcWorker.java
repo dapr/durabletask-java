@@ -86,7 +86,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * Closes the internally managed gRPC channel and executor service, if one exists.
      * <p>
      * Only the internally managed GRPC Channel and Executor services are closed. If any of them are supplied,
-     * it is the responsibility of the supplier to manage them.
+     * it is the responsibility of the supplier to take care of them.
      */
     public void close() {
         this.isNormalShutdown = true;
