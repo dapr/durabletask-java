@@ -4,7 +4,7 @@ package io.dapr.durabletask;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.StringValue;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService;
 
 import java.time.Duration;
 import java.util.Base64;

@@ -4,10 +4,10 @@ package io.dapr.durabletask;
 
 import com.google.protobuf.StringValue;
 
-import com.microsoft.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.*;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.WorkItem.RequestCase;
-import com.microsoft.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
+import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.WorkItem.RequestCase;
+import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
 
 import io.grpc.*;
 

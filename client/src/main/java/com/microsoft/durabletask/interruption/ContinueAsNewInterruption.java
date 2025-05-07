@@ -1,6 +1,6 @@
 package io.dapr.durabletask.interruption;
 
-import com.microsoft.durabletask.TaskOrchestrationContext;
+import io.dapr.durabletask.TaskOrchestrationContext;
 
 /**
  * Control flow {@code Throwable} class for orchestrator when invoke {@link TaskOrchestrationContext#continueAsNew}.

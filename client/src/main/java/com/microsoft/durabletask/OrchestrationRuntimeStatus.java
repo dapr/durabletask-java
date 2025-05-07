@@ -2,8 +2,8 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.*;
-import static com.microsoft.durabletask.implementation.protobuf.OrchestratorService.OrchestrationStatus.*;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
+import static io.dapr.durabletask.implementation.protobuf.OrchestratorService.OrchestrationStatus.*;
 
 /**
  * Enum describing the runtime status of the orchestration.

@@ -4,11 +4,11 @@ package io.dapr.durabletask;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
-import com.microsoft.durabletask.interruption.ContinueAsNewInterruption;
-import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.*;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.ScheduleTaskAction.Builder;
-import com.microsoft.durabletask.util.UUIDGenerator;
+import io.dapr.durabletask.interruption.ContinueAsNewInterruption;
+import io.dapr.durabletask.interruption.OrchestratorBlockedException;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.ScheduleTaskAction.Builder;
+import io.dapr.durabletask.util.UUIDGenerator;
 
 import javax.annotation.Nullable;
 import java.time.Duration;

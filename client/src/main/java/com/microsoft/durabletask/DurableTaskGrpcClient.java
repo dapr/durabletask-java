@@ -4,9 +4,9 @@ package io.dapr.durabletask;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.*;
-import com.microsoft.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
-import com.microsoft.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
+import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
+import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
 
 import io.grpc.*;
 

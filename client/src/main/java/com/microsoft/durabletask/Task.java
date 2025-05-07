@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
-import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
+import io.dapr.durabletask.interruption.OrchestratorBlockedException;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
