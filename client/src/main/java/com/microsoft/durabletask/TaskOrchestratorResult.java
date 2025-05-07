@@ -1,6 +1,6 @@
 package io.dapr.durabletask;
 
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService;
 
 import java.util.Collection;
 import java.util.Collections;

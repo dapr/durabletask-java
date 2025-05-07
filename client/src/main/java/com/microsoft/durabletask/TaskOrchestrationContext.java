@@ -72,7 +72,7 @@ public interface TaskOrchestrationContext {
 
     // TODO: Update the description of allOf to be more specific about the exception behavior.
 
-    //       https://github.com/microsoft/durabletask-java/issues/54
+    //       https://github.io.dapr.durabletask-java/issues/54
     /**
      * Returns a new {@code Task} that is completed when all the given {@code Task}s complete. If any of the given
      * {@code Task}s complete with an exception, the returned {@code Task} will also complete with an {@link CompositeTaskFailedException}

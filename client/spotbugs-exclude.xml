@@ -2,7 +2,7 @@
 <FindBugsFilter>
     <!-- Exclude generated protobuf code -->
     <Match>
-        <Package name="com.microsoft.durabletask.protobuf"/>
+        <Package name="io.dapr.durabletask.protobuf"/>
     </Match>
     
     <!-- Exclude test classes -->

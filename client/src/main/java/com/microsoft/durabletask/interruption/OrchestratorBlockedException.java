@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask.interruption;
 
-import com.microsoft.durabletask.Task;
+import io.dapr.durabletask.Task;
 
 /**
  * Control flow {@code Throwable} class for orchestrator functions. This {@code Throwable} must never be caught by user
