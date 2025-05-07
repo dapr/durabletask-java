@@ -1268,7 +1268,7 @@ public class IntegrationTests extends IntegrationTestBase {
             FailureDetails details = instance.getFailureDetails();
             assertNotNull(details);
             assertEquals(exceptionMessage, details.getErrorMessage());
-            assertEquals("com.microsoft.durabletask.CompositeTaskFailedException", details.getErrorType());
+            assertEquals("io.dapr.durabletask.CompositeTaskFailedException", details.getErrorType());
             assertNotNull(details.getStackTrace());
         }
     }

@@ -2,12 +2,12 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService;
-import com.microsoft.durabletask.implementation.protobuf.OrchestratorService.OrchestrationState;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService;
+import io.dapr.durabletask.implementation.protobuf.OrchestratorService.OrchestrationState;
 
 import java.time.Instant;
 
-import static com.microsoft.durabletask.Helpers.isNullOrEmpty;
+import static io.dapr.durabletask.Helpers.isNullOrEmpty;
 
 /**
  * Represents a snapshot of an orchestration instance's current state, including metadata.
