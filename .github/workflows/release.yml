@@ -107,4 +107,4 @@ jobs:
         run: exit 1
 
       - name: Publish to local
-        run: ./gradlew publishToMaven
+        run: ./gradlew publish
