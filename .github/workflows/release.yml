@@ -80,8 +80,8 @@ jobs:
           name: Package
           path: client/build/libs
 
-      - name: Build with Gradle
-        run: ./gradlew publish
+      - name: Publish with Gradle
+        run: ./gradlew publish  --stacktrace
         
       - name: Publish to ossrh
         run: ./gradlew jreleaserFullRelease --stacktrace
