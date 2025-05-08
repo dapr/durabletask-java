@@ -218,7 +218,9 @@ spotbugsTest {
 }
 
 jreleaser {
+
     signing {
+        gitRootSearch = true
         active = 'ALWAYS'
         armored = true
     }
