@@ -219,6 +219,7 @@ jreleaser {
         gitRootSearch = true
         active = 'ALWAYS'
         armored = true
+        verify = false
     }
     deploy {
         maven {
