@@ -129,7 +129,7 @@ task integrationTest(type: Test) {
 publishing {
     repositories {
         maven {
-            url = layout.buildDirectory.dir('staging-deploy')
+            url = rootProject.layout.buildDirectory.dir('staging-deploy')
         }
     }
     publications {
@@ -229,6 +229,7 @@ jreleaser {
                     url = 'https://s01.oss.sonatype.org/service/local'
                     closeRepository = true
                     releaseRepository = true
+                    stagingRepositories('build/staging-deploy')
                 }
             }
         }
