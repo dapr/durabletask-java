@@ -133,7 +133,7 @@ task integrationTest(type: Test) {
 publishing {
     repositories {
         maven {
-            url "file://$project.rootDir/repo"
+            url = layout.buildDirectory.dir('staging-deploy')
         }
     }
     publications {
