@@ -218,6 +218,15 @@ spotbugsTest {
 }
 
 jreleaser {
+     project {
+        name = "durabletask-java"
+        description = "This package contains classes and interfaces for building Durable Task orchestrations in Java."
+        authors = ["Dapr"]
+        tags = ['dapr']
+        maintainers = ['Dapr']
+        license = 'MIT'
+        inceptionYear = "2025"
+    }
 
     signing {
         gitRootSearch = true
