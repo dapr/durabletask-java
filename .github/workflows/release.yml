@@ -19,7 +19,7 @@ jobs:
       JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_KEY }}
       JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PWD }}
-      JRELEASER_NEXUS2_MAVEN_CENTRAL_USERNAME: dapr.io
+      JRELEASER_NEXUS2_MAVEN_CENTRAL_USERNAME: ${{ secrets.OSSRH_USER_TOKEN }}
       JRELEASER_NEXUS2_MAVEN_CENTRAL_PASSWORD:  ${{ secrets.OSSRH_PWD_TOKEN }}
     steps:
       - uses: actions/checkout@v2
