@@ -10,7 +10,7 @@ plugins {
 }
 
 group 'io.dapr'
-version = '1.5.2'
+version = '1.5.3'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.59.0'
@@ -240,9 +240,8 @@ jreleaser {
                 'maven-central' {
                     active = 'ALWAYS'
                     url = 'https://oss.sonatype.org/service/local'
-                    snapshotUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
-                    closeRepository = true
-                    releaseRepository = true
+                    closeRepository = false
+                    releaseRepository = false
                     applyMavenCentralRules = true
                     stagingRepository('../build/staging-deploy')
                 }
