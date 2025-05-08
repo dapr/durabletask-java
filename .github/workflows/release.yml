@@ -78,9 +78,10 @@ jobs:
         with:
           name: Package
           path: client/build/libs
+
       - name: Publish to ossrh
         run: |
             echo ${{ secrets.GPG_PRIVATE_KEY }} | base64 -d > private-key.gpg
             export GPG_TTY=$(tty)
             gpg --batch --import private-key.gpg
-           ./gradlew jreleaserFullRelease
+            ./gradlew jreleaserFullRelease
