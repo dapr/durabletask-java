@@ -218,7 +218,7 @@ jreleaser {
     signing {
         gitRootSearch = true
         active = 'ALWAYS'
-        armored = true
+        armored = false
     }
     deploy {
         maven {
