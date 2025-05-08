@@ -220,7 +220,6 @@ jreleaser {
         active = 'ALWAYS'
         armored = true
         verify = false
-        mode = 'FILE'
     }
     deploy {
         maven {
