@@ -85,5 +85,6 @@ jobs:
             echo ${{ secrets.GPG_PRIVATE_KEY }} > private-key.gpg
             export GPG_TTY=$(tty)
             gpg --batch --import private-key.gpg
+            gpg --export --armor > private-key.gpg
             ./gradlew jreleaserConfig
             ./gradlew jreleaserFullRelease --stacktrace
