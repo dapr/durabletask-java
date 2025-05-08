@@ -71,7 +71,7 @@ jobs:
           path: '**/build/reports/tests/test'
           if-no-files-found: ignore  # Prevents errors if no reports exist
 
-      - name: Fail the job if unit tests failed
+      - name: Fail the job if unit tests fail
         if: env.UNIT_TEST_FAILED == 'true'
         run: exit 1
       - name: Upload JAR output
@@ -85,4 +85,4 @@ jobs:
             echo ${{ secrets.GPG_PRIVATE_KEY }} | base64 -d > private-key.gpg
             export GPG_TTY=$(tty)
             gpg --batch --import private-key.gpg
-            ./gradlew jreleaserFullRelease
+            ./gradlew jreleaserFullRelease --debug
