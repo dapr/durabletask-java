@@ -4,8 +4,9 @@ plugins {
     // Generate IntelliJ IDEA's .idea & .iml project files
     id 'idea'
     id 'maven-publish'
-    id 'signing'
+//    id 'signing'
     id 'com.github.spotbugs' version '5.2.1'
+    id 'org.jreleaser' version '1.18.0'
 }
 
 group 'io.dapr'
@@ -175,14 +176,6 @@ publishing {
     }
 }
 
-signing {
-    sign publishing.publications.mavenJava
-    useInMemoryPgpKeys(
-            findProperty("GPG_KEY"),
-            findProperty("GPG_PWD")
-    )
-}
-
 java {
     withSourcesJar()
     withJavadocJar()
@@ -216,6 +209,26 @@ spotbugsTest {
         }
         xml {
             required = true
+        }
+    }
+}
+
+jreleaser {
+    signing {
+        active = 'ALWAYS'
+        armored = true
+    }
+    deploy {
+        maven {
+            nexus2 {
+                'maven-central' {
+                    active = 'ALWAYS'
+                    url = 'https://s01.oss.sonatype.org/service/local'
+                    snapshotUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots'
+                    closeRepository = true
+                    releaseRepository = true
+                }
+            }
         }
     }
 }
