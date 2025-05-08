@@ -86,3 +86,4 @@ jobs:
             export GPG_TTY=$(tty)
             gpg --batch --import private-key.gpg
             ./gradlew jreleaserConfig
+            ./gradlew jreleaserFullRelease --stacktrace
