@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 30
     env:
       JDK_VER: 11
-      JRELEASER_GITHUB_TOKEN: $$ {{ secrets.GITHUB_TOKEN }}
+      JRELEASER_GITHUB_TOKEN: $${{ secrets.GITHUB_TOKEN }}
       JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_KEY }}
       JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PWD }}
