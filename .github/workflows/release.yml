@@ -80,6 +80,9 @@ jobs:
           name: Package
           path: client/build/libs
 
+      - name: Build with Gradle
+        run: ./gradlew publish
+        
       - name: Publish to ossrh
         run: |
             ./gradlew jreleaserConfig
