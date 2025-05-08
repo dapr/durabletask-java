@@ -233,7 +233,6 @@ jreleaser {
                     url = 'https://s01.oss.sonatype.org/service/local'
                     closeRepository = true
                     releaseRepository = true
-                    stagingRepository('target/staging-deploy')
                 }
             }
         }
