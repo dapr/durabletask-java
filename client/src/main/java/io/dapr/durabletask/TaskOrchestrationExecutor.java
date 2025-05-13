@@ -1165,10 +1165,14 @@ final class TaskOrchestrationExecutor {
 
             private boolean shouldRetry() {
                 if (this.lastFailure.isNonRetriable()) {
-                     return false;
+                    logger.warning("Not performing any retries because the error is non retriable");
+
+                    return false;
                 }
 
                 if (this.policy != null) {
+                    logger.warning("Performing retires based on policy");
+
                     return this.shouldRetryBasedOnPolicy();
                 } else if (this.handler != null) {
                     RetryContext retryContext = new RetryContext(
@@ -1184,6 +1188,8 @@ final class TaskOrchestrationExecutor {
             }
 
             private boolean shouldRetryBasedOnPolicy() {
+                logger.warning(this.attemptNumber + " retries out of total %d performed " + this.policy.getMaxNumberOfAttempts());
+
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
                     return false;
