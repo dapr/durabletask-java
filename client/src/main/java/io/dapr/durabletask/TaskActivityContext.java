@@ -7,11 +7,18 @@ package io.dapr.durabletask;
  * its input.
  */
 public interface TaskActivityContext {
-    /**
-     * Gets the name of the current task activity.
-     * @return the name of the current task activity
-     */
-    String getName();
+        /**
+         * Gets the name of the current task activity.
+         * @return the name of the current task activity
+         */
+        String getName();
+
+        /**
+         * Gets the task execution key of the current task activity.
+         * This key is used to identify the task execution and is unique for each task execution.
+         * @return the task execution key of the current task activity
+         */
+        String getTaskExecutionKey();
 
     /**
      * Gets the deserialized activity input.
