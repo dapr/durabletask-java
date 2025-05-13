@@ -1151,14 +1151,15 @@ final class TaskOrchestrationExecutor {
                 // At that point, we break the `await()` on the child task.
                 // Therefore, once we return from the following `await`,
                 // we just need to await again on the *current* child task to obtain the result of this task
-
                 try{
-                    return this.getChildTask().await();
+                    this.getChildTask().await();
                 } catch (OrchestratorBlockedException ex) {
                     throw ex;
-                } catch (Exception ex) {
+                } catch (Exception ignored) {
+                    // ignore the exception from previous child tasks.
+                    // Only needs to return result from the last child task, which is on next line.
                 }
-
+                // Always return the last child task result.
                 return this.getChildTask().await();
             }
 
@@ -1196,11 +1197,9 @@ final class TaskOrchestrationExecutor {
 
                 // Duration.ZERO is interpreted as no maximum timeout
                 Duration retryTimeout = this.policy.getRetryTimeout();
-
                 if (retryTimeout.compareTo(Duration.ZERO) > 0) {
                     Instant retryExpiration = this.firstAttempt.plus(retryTimeout);
                     if (this.context.getCurrentInstant().compareTo(retryExpiration) >= 0) {
-
                         // Max retry timeout exceeded
                         return false;
                     }
@@ -1381,7 +1380,6 @@ final class TaskOrchestrationExecutor {
                 Task<V> parentTask = this.getParentTask();
                 boolean result = this.future.completeExceptionally(ex);
                 if (parentTask instanceof RetriableTask) {
-
                     // notify parent task
                     ((RetriableTask<V>) parentTask).handleChildException(ex);
                 }
