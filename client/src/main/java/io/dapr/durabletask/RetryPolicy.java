@@ -109,8 +109,8 @@ public final class RetryPolicy {
      * @return this retry policy object
      */
     public RetryPolicy setRetryTimeout(Duration retryTimeout) {
-        if (retryTimeout != null && retryTimeout.compareTo(this.firstRetryInterval) < 0) {
-            throw new IllegalArgumentException("The value for retryTimeout must be greater than or equal to the value for firstRetryInterval.");
+        if (retryTimeout == null || retryTimeout.compareTo(this.firstRetryInterval) < 0) {
+            throw new IllegalArgumentException("The value for retryTimeout cannot be null and must be greater than or equal to the value for firstRetryInterval.");
         }
         this.retryTimeout = retryTimeout;
         return this;
