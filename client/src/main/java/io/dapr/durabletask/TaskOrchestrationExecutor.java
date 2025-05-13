@@ -1151,24 +1151,27 @@ final class TaskOrchestrationExecutor {
                 // At that point, we break the `await()` on the child task.
                 // Therefore, once we return from the following `await`,
                 // we just need to await again on the *current* child task to obtain the result of this task
+
                 try{
-                    this.getChildTask().await();
+                    return this.getChildTask().await();
                 } catch (OrchestratorBlockedException ex) {
                     throw ex;
-                } catch (Exception ignored) {
-                    // ignore the exception from previous child tasks.
-                    // Only needs to return result from the last child task, which is on next line.
+                } catch (Exception ex) {
                 }
-                // Always return the last child task result.
+
                 return this.getChildTask().await();
             }
 
             private boolean shouldRetry() {
                 if (this.lastFailure.isNonRetriable()) {
-                     return false;
+                    logger.warning("Not performing any retries because the error is non retriable");
+
+                    return false;
                 }
 
                 if (this.policy != null) {
+                    logger.warning("Performing retires based on policy");
+
                     return this.shouldRetryBasedOnPolicy();
                 } else if (this.handler != null) {
                     RetryContext retryContext = new RetryContext(
@@ -1184,6 +1187,8 @@ final class TaskOrchestrationExecutor {
             }
 
             private boolean shouldRetryBasedOnPolicy() {
+                logger.warning(this.attemptNumber + " retries out of total %d performed " + this.policy.getMaxNumberOfAttempts());
+
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
                     return false;
@@ -1191,9 +1196,11 @@ final class TaskOrchestrationExecutor {
 
                 // Duration.ZERO is interpreted as no maximum timeout
                 Duration retryTimeout = this.policy.getRetryTimeout();
+
                 if (retryTimeout.compareTo(Duration.ZERO) > 0) {
                     Instant retryExpiration = this.firstAttempt.plus(retryTimeout);
                     if (this.context.getCurrentInstant().compareTo(retryExpiration) >= 0) {
+
                         // Max retry timeout exceeded
                         return false;
                     }
@@ -1374,6 +1381,7 @@ final class TaskOrchestrationExecutor {
                 Task<V> parentTask = this.getParentTask();
                 boolean result = this.future.completeExceptionally(ex);
                 if (parentTask instanceof RetriableTask) {
+
                     // notify parent task
                     ((RetriableTask<V>) parentTask).handleChildException(ex);
                 }
