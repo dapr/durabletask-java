@@ -240,8 +240,8 @@ jreleaser {
                 'maven-central' {
                     active = 'ALWAYS'
                     url = 'https://oss.sonatype.org/service/local'
-                    closeRepository = false
-                    releaseRepository = false
+                    closeRepository = true
+                    releaseRepository = true
                     applyMavenCentralRules = true
                     stagingRepository('../build/staging-deploy')
                 }
