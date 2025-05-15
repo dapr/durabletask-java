@@ -9,6 +9,11 @@ import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
 
 import io.grpc.*;
+import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
+import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import java.io.FileInputStream;
+import java.io.InputStream;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
@@ -21,6 +26,7 @@ import java.util.stream.Collectors;
 
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanContext;
+import java.io.IOException;
 
 /**
  * Durable Task client implementation that uses gRPC to connect to a remote "sidecar" process.
@@ -28,6 +34,10 @@ import io.opentelemetry.api.trace.SpanContext;
 public final class DurableTaskGrpcClient extends DurableTaskClient {
     private static final int DEFAULT_PORT = 4001;
     private static final Logger logger = Logger.getLogger(DurableTaskGrpcClient.class.getPackage().getName());
+    private static final String GRPC_TLS_CA_PATH = "DAPR_GRPC_TLS_CA_PATH";
+    private static final String GRPC_TLS_CERT_PATH = "DAPR_GRPC_TLS_CERT_PATH";
+    private static final String GRPC_TLS_KEY_PATH = "DAPR_GRPC_TLS_KEY_PATH";
+    private static final String GRPC_TLS_INSECURE = "DAPR_GRPC_TLS_INSECURE";
 
     private final DataConverter dataConverter;
     private final ManagedChannel managedSidecarChannel;
@@ -48,11 +58,60 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
                 port = builder.port;
             }
 
+            String endpoint = "localhost:" + port;
+            ManagedChannelBuilder<?> channelBuilder;
+
+            // Get TLS configuration from builder or environment variables
+            String tlsCaPath = builder.tlsCaPath != null ? builder.tlsCaPath : System.getenv(GRPC_TLS_CA_PATH);
+            String tlsCertPath = builder.tlsCertPath != null ? builder.tlsCertPath : System.getenv(GRPC_TLS_CERT_PATH);
+            String tlsKeyPath = builder.tlsKeyPath != null ? builder.tlsKeyPath : System.getenv(GRPC_TLS_KEY_PATH);
+            boolean insecure = builder.insecure || Boolean.parseBoolean(System.getenv(GRPC_TLS_INSECURE));
+
+            if (insecure) {
+                // Insecure mode - uses TLS but doesn't verify certificates
+                try {
+                    channelBuilder = NettyChannelBuilder.forTarget(endpoint)
+                        .sslContext(GrpcSslContexts.forClient()
+                            .trustManager(InsecureTrustManagerFactory.INSTANCE)
+                            .build());
+                } catch (Exception e) {
+                    throw new RuntimeException("Failed to create insecure TLS credentials", e);
+                }
+            } else if (tlsCertPath != null && tlsKeyPath != null) {
+                // mTLS case - using client cert and key, with optional CA cert for server authentication
+                try (
+                    InputStream clientCertInputStream = new FileInputStream(tlsCertPath);
+                    InputStream clientKeyInputStream = new FileInputStream(tlsKeyPath);
+                    InputStream caCertInputStream = tlsCaPath != null ? new FileInputStream(tlsCaPath) : null
+                ) {
+                    TlsChannelCredentials.Builder tlsBuilder = TlsChannelCredentials.newBuilder()
+                        .keyManager(clientCertInputStream, clientKeyInputStream);  // For client authentication
+                    if (caCertInputStream != null) {
+                        tlsBuilder.trustManager(caCertInputStream);  // For server authentication
+                    }
+                    ChannelCredentials credentials = tlsBuilder.build();
+                    channelBuilder = Grpc.newChannelBuilder(endpoint, credentials);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to create mTLS credentials" + 
+                        (tlsCaPath != null ? " with CA cert" : ""), e);
+                }
+            } else if (tlsCaPath != null) {
+                // Simple TLS case - using CA cert only for server authentication
+                try (InputStream caCertInputStream = new FileInputStream(tlsCaPath)) {
+                    ChannelCredentials credentials = TlsChannelCredentials.newBuilder()
+                        .trustManager(caCertInputStream)
+                        .build();
+                    channelBuilder = Grpc.newChannelBuilder(endpoint, credentials);
+                } catch (IOException e) {
+                    throw new RuntimeException("Failed to create TLS credentials with CA cert", e);
+                }
+            } else {
+                // No TLS config provided, use plaintext
+                channelBuilder = ManagedChannelBuilder.forTarget(endpoint).usePlaintext();
+            }
+
             // Need to keep track of this channel so we can dispose it on close()
-            this.managedSidecarChannel = ManagedChannelBuilder
-                    .forAddress("localhost", port)
-                    .usePlaintext()
-                    .build();
+            this.managedSidecarChannel = channelBuilder.build();
             sidecarGrpcChannel = this.managedSidecarChannel;
         }
 
