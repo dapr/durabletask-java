@@ -12,6 +12,10 @@ public final class DurableTaskGrpcClientBuilder {
     DataConverter dataConverter;
     int port;
     Channel channel;
+    String tlsCaPath;
+    String tlsCertPath;
+    String tlsKeyPath;
+    boolean insecure;
 
     /**
      * Sets the {@link DataConverter} to use for converting serializable data payloads.
@@ -50,6 +54,55 @@ public final class DurableTaskGrpcClientBuilder {
      */
     public DurableTaskGrpcClientBuilder port(int port) {
         this.port = port;
+        return this;
+    }
+
+    /**
+     * Sets the path to the TLS CA certificate file for server authentication.
+     * If not set, the system's default CA certificates will be used.
+     *
+     * @param tlsCaPath path to the TLS CA certificate file
+     * @return this builder object
+     */
+    public DurableTaskGrpcClientBuilder tlsCaPath(String tlsCaPath) {
+        this.tlsCaPath = tlsCaPath;
+        return this;
+    }
+
+    /**
+     * Sets the path to the TLS client certificate file for client authentication.
+     * This is used for mTLS (mutual TLS) connections.
+     *
+     * @param tlsCertPath path to the TLS client certificate file
+     * @return this builder object
+     */
+    public DurableTaskGrpcClientBuilder tlsCertPath(String tlsCertPath) {
+        this.tlsCertPath = tlsCertPath;
+        return this;
+    }
+
+    /**
+     * Sets the path to the TLS client key file for client authentication.
+     * This is used for mTLS (mutual TLS) connections.
+     *
+     * @param tlsKeyPath path to the TLS client key file
+     * @return this builder object
+     */
+    public DurableTaskGrpcClientBuilder tlsKeyPath(String tlsKeyPath) {
+        this.tlsKeyPath = tlsKeyPath;
+        return this;
+    }
+
+    /**
+     * Sets whether to use insecure (plaintext) mode for gRPC communication.
+     * When set to true, TLS will be disabled and communication will be unencrypted.
+     * This should only be used for development/testing.
+     *
+     * @param insecure whether to use insecure mode
+     * @return this builder object
+     */
+    public DurableTaskGrpcClientBuilder insecure(boolean insecure) {
+        this.insecure = insecure;
         return this;
     }
 
