@@ -10,11 +10,11 @@ plugins {
 }
 
 group 'io.dapr'
-version = '1.5.3'
+version = '1.5.4'
 archivesBaseName = 'durabletask-client'
 
-def grpcVersion = '1.59.0'
-def protocVersion = '3.19.0'
+def grpcVersion = '1.69.0'
+def protocVersion = '3.25.5'
 def jacksonVersion = '2.15.3'
 // When build on local, you need to set this value to your local jdk11 directory.
 // Java11 is used to compile and run all the tests.
@@ -38,6 +38,19 @@ dependencies {
     
     testImplementation(platform('org.junit:junit-bom:5.7.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
+
+    // Netty dependencies for TLS
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.netty:netty-handler:4.1.94.Final"
+    implementation "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
+
+    // Add Netty dependencies to test classpath
+    testImplementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    testImplementation "io.netty:netty-handler:4.1.94.Final"
+    testImplementation "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
+
+    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    testImplementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
 }
 
 compileJava {
