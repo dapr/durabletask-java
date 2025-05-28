@@ -19,7 +19,7 @@ final class TaskActivityExecutor {
         this.logger = logger;
     }
 
-    public String execute(String taskName, String input, String taskExecutionKey) throws Throwable {
+    public String execute(String taskName, String input, int taskId) throws Throwable {
         TaskActivityFactory factory = this.activityFactories.get(taskName);
         if (factory == null) {
             throw new IllegalStateException(
@@ -32,7 +32,7 @@ final class TaskActivityExecutor {
                     String.format("The task factory '%s' returned a null TaskActivity object.", taskName));
         }
 
-        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input, taskExecutionKey);
+        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input);
 
         // Unhandled exceptions are allowed to escape
         Object output = activity.run(context);
@@ -44,27 +44,19 @@ final class TaskActivityExecutor {
     }
 
     private class TaskActivityContextImpl implements TaskActivityContext {
-        private final String taskExecutionKey;
         private final String name;
         private final String rawInput;
-                
 
         private final DataConverter dataConverter = TaskActivityExecutor.this.dataConverter;
 
-        public TaskActivityContextImpl(String activityName, String rawInput, String taskExecutionKey) {
+        public TaskActivityContextImpl(String activityName, String rawInput) {
             this.name = activityName;
             this.rawInput = rawInput;
-            this.taskExecutionKey = taskExecutionKey;
         }
 
         @Override
         public String getName() {
             return this.name;
-        }
-
-        @Override
-        public String getTaskExecutionKey() {
-            return this.taskExecutionKey;
         }
 
         @Override
