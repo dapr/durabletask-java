@@ -1188,7 +1188,7 @@ final class TaskOrchestrationExecutor {
             }
 
             private boolean shouldRetryBasedOnPolicy() {
-                logger.warning(this.attemptNumber + " retries out of total %d performed " + this.policy.getMaxNumberOfAttempts());
+                logger.warning(() -> String.format(this.attemptNumber + " retries out of total %d performed " + this.policy.getMaxNumberOfAttempts()));
 
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
