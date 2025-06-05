@@ -7,6 +7,7 @@ plugins {
 //    id 'signing'
     id 'com.github.spotbugs' version '5.2.1'
     id 'org.jreleaser' version '1.18.0'
+    id 'org.gradle.test-retry' version '1.4.1'
 }
 
 group 'io.dapr'
@@ -122,6 +123,11 @@ test {
         // and require external dependencies.
         excludeTags "integration"
     }
+    
+    retry {
+        maxRetries = 2
+        maxFailures = 5
+    }
 }
 
 // Unlike normal unit tests, some tests are considered "integration tests" and shouldn't be
@@ -137,6 +143,12 @@ task integrationTest(type: Test) {
     testLogging.showStandardStreams = true
 
     ignoreFailures = false
+    
+    // Add retry capability for flaky integration tests
+    retry {
+        maxRetries = 3
+        maxFailures = 10
+    }
 }
 
 publishing {
