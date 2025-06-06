@@ -9,7 +9,7 @@ public final class TaskOptions {
     private final RetryPolicy retryPolicy;
     private final RetryHandler retryHandler;
 
-    private TaskOptions(RetryPolicy retryPolicy, RetryHandler retryHandler) {
+    public TaskOptions(RetryPolicy retryPolicy, RetryHandler retryHandler) {
         this.retryPolicy = retryPolicy;
         this.retryHandler = retryHandler;
     }
