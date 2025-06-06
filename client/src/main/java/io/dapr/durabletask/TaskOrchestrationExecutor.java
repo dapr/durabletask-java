@@ -406,10 +406,8 @@ final class TaskOrchestrationExecutor {
 
         private <V> Task<V> createAppropriateTask(TaskFactory<V> taskFactory, TaskOptions options) {
             // Retry policies and retry handlers will cause us to return a RetriableTask<V>
-            if (options != null && options.hasRetryPolicy()) {
-                return new RetriableTask<V>(this, taskFactory, options.getRetryPolicy());
-            } if (options != null && options.hasRetryHandler()) {
-                return new RetriableTask<V>(this, taskFactory, options.getRetryHandler());
+            if (options != null && (options.hasRetryPolicy() || options.hasRetryHandler())) {
+                return new RetriableTask<V>(this, taskFactory, options.getRetryPolicy(), options.getRetryHandler());
             } else {
                 // Return a single vanilla task without any wrapper
                 return taskFactory.create();
@@ -1170,25 +1168,29 @@ final class TaskOrchestrationExecutor {
                     return false;
                 }
 
-                if (this.policy != null) {
-                    logger.warning("Performing retires based on policy");
-
-                    return this.shouldRetryBasedOnPolicy();
-                } else if (this.handler != null) {
-                    RetryContext retryContext = new RetryContext(
-                            this.context,
-                            this.attemptNumber,
-                            this.lastFailure,
-                            this.totalRetryTime);
-                    return this.handler.handle(retryContext);
-                } else {
+                if(this.policy == null && this.handler == null) {
                     // We should never get here, but if we do, returning false is the natural behavior.
                     return false;
                 }
+
+                RetryContext retryContext = new RetryContext(
+                        this.context,
+                        this.attemptNumber,
+                        this.lastFailure,
+                        this.totalRetryTime);
+
+                // These must default to true if not provided, so it is possible to use only one of them at a time
+                boolean shouldRetryBasedOnPolicy = this.policy == null || this.shouldRetryBasedOnPolicy();
+                boolean shouldRetryBasedOnHandler = this.handler == null || this.handler.handle(retryContext);
+
+                logger.info(() -> String.format("Retry policy provided: %s, shouldRetryBasedOnPolicy: %s", this.policy != null, shouldRetryBasedOnPolicy));
+                logger.info(() -> String.format("Retry handler provided: %s, shouldRetryBasedOnHandler: %s",  this.handler != null, shouldRetryBasedOnHandler));
+
+                return shouldRetryBasedOnPolicy && shouldRetryBasedOnHandler;
             }
 
             private boolean shouldRetryBasedOnPolicy() {
-                logger.warning(() -> String.format("%d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
+                logger.warning(() -> String.format("Retry Policy: %d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
 
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
