@@ -1183,8 +1183,13 @@ final class TaskOrchestrationExecutor {
                 boolean shouldRetryBasedOnPolicy = this.policy == null || this.shouldRetryBasedOnPolicy();
                 boolean shouldRetryBasedOnHandler = this.handler == null || this.handler.handle(retryContext);
 
-                logger.info(() -> String.format("Retry policy provided: %s, shouldRetryBasedOnPolicy: %s", this.policy != null, shouldRetryBasedOnPolicy));
-                logger.info(() -> String.format("Retry handler provided: %s, shouldRetryBasedOnHandler: %s",  this.handler != null, shouldRetryBasedOnHandler));
+                if (this.policy != null) {
+                    logger.info(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
+                }
+
+                if (this.handler != null) {
+                    logger.info(() -> String.format("shouldRetryBasedOnHandler: %s",  shouldRetryBasedOnHandler));
+                }
 
                 return shouldRetryBasedOnPolicy && shouldRetryBasedOnHandler;
             }
