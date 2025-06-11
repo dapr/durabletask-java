@@ -1180,8 +1180,8 @@ final class TaskOrchestrationExecutor {
                         this.totalRetryTime);
 
                 // These must default to true if not provided, so it is possible to use only one of them at a time
-                boolean shouldRetryBasedOnPolicy = this.policy == null || this.shouldRetryBasedOnPolicy();
-                boolean shouldRetryBasedOnHandler = this.handler == null || this.handler.handle(retryContext);
+                boolean shouldRetryBasedOnPolicy = this.policy != null ? this.shouldRetryBasedOnPolicy() : true;
+                boolean shouldRetryBasedOnHandler = this.handler != null ? this.handler.handle(retryContext) : true;
 
                 if (this.policy != null) {
                     logger.info(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
