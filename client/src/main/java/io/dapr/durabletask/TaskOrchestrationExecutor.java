@@ -1184,18 +1184,18 @@ final class TaskOrchestrationExecutor {
                 boolean shouldRetryBasedOnHandler = this.handler != null ? this.handler.handle(retryContext) : true;
 
                 if (this.policy != null) {
-                    logger.info(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
+                    logger.fine(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
                 }
 
                 if (this.handler != null) {
-                    logger.info(() -> String.format("shouldRetryBasedOnHandler: %s",  shouldRetryBasedOnHandler));
+                    logger.fine(() -> String.format("shouldRetryBasedOnHandler: %s",  shouldRetryBasedOnHandler));
                 }
 
                 return shouldRetryBasedOnPolicy && shouldRetryBasedOnHandler;
             }
 
             private boolean shouldRetryBasedOnPolicy() {
-                logger.warning(() -> String.format("Retry Policy: %d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
+                logger.fine(() -> String.format("Retry Policy: %d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
 
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
