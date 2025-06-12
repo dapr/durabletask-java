@@ -10,7 +10,7 @@ plugins {
 }
 
 group 'io.dapr'
-version = '1.5.6'
+version = '1.5.7'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.69.0'
