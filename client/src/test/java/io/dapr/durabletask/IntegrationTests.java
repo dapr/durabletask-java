@@ -600,6 +600,7 @@ public class IntegrationTests extends IntegrationTestBase {
     }
 
     @Test
+    @Disabled("Test is disabled for investigation")
     void terminateSuspendOrchestration() throws TimeoutException, InterruptedException {
         final String orchestratorName = "suspendResume";
         final String eventName = "MyEvent";

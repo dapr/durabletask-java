@@ -39,7 +39,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
     private final boolean isExecutorServiceManaged;
     private volatile boolean isNormalShutdown = false;
-
+    private Thread processorThread;
+    
     DurableTaskGrpcWorker(DurableTaskGrpcWorkerBuilder builder) {
         this.orchestrationFactories.putAll(builder.orchestrationFactories);
         this.activityFactories.putAll(builder.activityFactories);
@@ -70,7 +71,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         this.workerPool = builder.executorService != null ? builder.executorService : Executors.newCachedThreadPool();
         this.isExecutorServiceManaged = builder.executorService == null;
     }
-
+    
     /**
      * Establishes a gRPC connection to the sidecar and starts processing work-items in the background.
      * <p>
@@ -79,8 +80,10 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      * continues until either a connection succeeds or the process receives an interrupt signal.
      */
     public void start() {
-        new Thread(this::startAndBlock).start();
+        this.processorThread = new Thread(this::startAndBlock);
+        this.processorThread.start();
     }
+    
 
     /**
      * Closes the internally managed gRPC channel and executor service, if one exists.
@@ -90,6 +93,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
      */
     public void close() {
         this.isNormalShutdown = true;
+        this.processorThread.interrupt();
         this.shutDownWorkerPool();
         this.closeSideCarChannel();
     }
@@ -118,7 +122,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 logger);
 
         // TODO: How do we interrupt manually?
-        while (true) {
+        while (true && !this.isNormalShutdown) {
             try {
                 GetWorkItemsRequest getWorkItemsRequest = GetWorkItemsRequest.newBuilder().build();
                 Iterator<WorkItem> workItemStream = this.sidecarClient.getWorkItems(getWorkItemsRequest);

@@ -45,7 +45,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
                 .buildAndStart();
 
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
-        try (worker; client) {
+        try (client ; worker) {
             String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName, 0);
             OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, defaultTimeout, true);
             assertNotNull(instance);
