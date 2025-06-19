@@ -1566,7 +1566,10 @@ public class IntegrationTests extends IntegrationTestBase {
                     if (currentUUID1.equals(currentUUID2)) ctx.complete(false);
                     else ctx.complete(true);
                 })
-                .addActivity(echoActivityName, ctx -> ctx.getInput(UUID.class))
+                .addActivity(echoActivityName, ctx -> {
+                    System.out.println("##### echoActivityName: " + ctx.getInput(UUID.class ));
+                    return ctx.getInput(UUID.class);
+                })
                 .buildAndStart();
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
 
@@ -1581,4 +1584,55 @@ public class IntegrationTests extends IntegrationTestBase {
         }
 
     }
+
+
+    @Test
+    public void taskExecutionIdTest() {
+        var orchestratorName = "test-task-execution-id";
+        var retryActivityName = "RetryN";
+        final RetryPolicy retryPolicy = new RetryPolicy(4, Duration.ofSeconds(3));
+        final TaskOptions taskOptions = new TaskOptions(retryPolicy);
+
+        var execMap = new HashMap<String, Integer>();
+
+        DurableTaskGrpcWorker worker = this.createWorkerBuilder()
+                .addOrchestrator(orchestratorName, ctx -> {
+                    ctx.callActivity(retryActivityName,null,taskOptions).await();    
+                    ctx.callActivity(retryActivityName,null,taskOptions).await();    
+                    ctx.complete(true);
+                })
+                .addActivity(retryActivityName, ctx -> {
+                    System.out.println("##### RetryN[executionId]: " + ctx.getTaskExecutionId());
+                    var c = execMap.get(ctx.getTaskExecutionId());
+                    if (c == null) {
+                        c = 0;
+                    } else {
+                        c++;
+                    }
+
+                    execMap.put(ctx.getTaskExecutionId(), c);
+                    if (c < 2) {
+                        throw new RuntimeException("test retry");
+                    }
+                    return null;
+                })
+                .buildAndStart();
+        DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
+
+        try(worker; client) {
+            client.createTaskHub(true);
+            String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName);
+            OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, defaultTimeout, true);
+            assertNotNull(instance);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus());
+            assertEquals(2, execMap.size());
+            assertTrue(instance.readOutputAs(boolean.class));
+        } catch (TimeoutException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
 }
+
+
