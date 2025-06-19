@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 
-option csharp_namespace = "Microsoft.DurableTask.Protobuf";
+option csharp_namespace = "Dapr.DurableTask.Protobuf";
 option java_package = "io.dapr.durabletask.implementation.protobuf";
 option go_package = "/api/protos";
 
@@ -24,6 +24,7 @@ message ActivityRequest {
     OrchestrationInstance orchestrationInstance = 4;
     int32 taskId = 5;
     TraceContext parentTraceContext = 6;
+    string taskExecutionId = 7;
 }
 
 message ActivityResponse {
@@ -94,16 +95,19 @@ message TaskScheduledEvent {
     google.protobuf.StringValue version = 2;
     google.protobuf.StringValue input = 3;
     TraceContext parentTraceContext = 4;
+    string taskExecutionId = 5;
 }
 
 message TaskCompletedEvent {
     int32 taskScheduledId = 1;
     google.protobuf.StringValue result = 2;
+    string taskExecutionId = 3;
 }
 
 message TaskFailedEvent {
     int32 taskScheduledId = 1;
     TaskFailureDetails failureDetails = 2;
+    string taskExecutionId = 3;
 }
 
 message SubOrchestrationInstanceCreatedEvent {
@@ -256,6 +260,7 @@ message ScheduleTaskAction {
     string name = 1;
     google.protobuf.StringValue version = 2;
     google.protobuf.StringValue input = 3;
+    string taskExecutionId = 4;
 }
 
 message CreateSubOrchestrationAction {

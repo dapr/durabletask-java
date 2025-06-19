@@ -38,7 +38,7 @@ dependencies {
     implementation "com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jacksonVersion}"
     
     testImplementation(platform('org.junit:junit-bom:5.7.2'))
-    testImplementation('org.junit.jupiter:junit-jupiter')
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 
     // Netty dependencies for TLS
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
@@ -73,7 +73,7 @@ task downloadProtoFiles {
         protoDir.mkdirs()
 
         // Download the proto file
-        new URL("https://raw.githubusercontent.com/dapr/durabletask-protobuf/${ext.branch}/protos/orchestrator_service.proto")
+        new URL("https://raw.githubusercontent.com/javier-aliaga/durabletask-protobuf/refs/heads/javi-add-activity-execution-id/protos/orchestrator_service.proto")
             .withInputStream { i -> 
                 new File(protoDir, 'orchestrator_service.proto').withOutputStream { it << i }
             }
