@@ -1183,19 +1183,25 @@ final class TaskOrchestrationExecutor {
                 boolean shouldRetryBasedOnPolicy = this.policy != null ? this.shouldRetryBasedOnPolicy() : true;
                 boolean shouldRetryBasedOnHandler = this.handler != null ? this.handler.handle(retryContext) : true;
 
-                if (this.policy != null) {
-                    logger.info(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
-                }
+                // Only log when not replaying, so only the current attempt is logged and not all previous attempts.
+                if(!this.context.getIsReplaying()) {
+                    if (this.policy != null) {
+                        logger.fine(() -> String.format("shouldRetryBasedOnPolicy: %s", shouldRetryBasedOnPolicy));
+                    }
 
-                if (this.handler != null) {
-                    logger.info(() -> String.format("shouldRetryBasedOnHandler: %s",  shouldRetryBasedOnHandler));
+                    if (this.handler != null) {
+                        logger.fine(() -> String.format("shouldRetryBasedOnHandler: %s",  shouldRetryBasedOnHandler));
+                    }
                 }
 
                 return shouldRetryBasedOnPolicy && shouldRetryBasedOnHandler;
             }
 
             private boolean shouldRetryBasedOnPolicy() {
-                logger.warning(() -> String.format("Retry Policy: %d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
+                // Only log when not replaying, so only the current attempt is logged and not all previous attempts.
+                if(!this.context.getIsReplaying()) {
+                    logger.fine(() -> String.format("Retry Policy: %d retries out of total %d performed ", this.attemptNumber, this.policy.getMaxNumberOfAttempts()));
+                }
 
                 if (this.attemptNumber >= this.policy.getMaxNumberOfAttempts()) {
                     // Max number of attempts exceeded
