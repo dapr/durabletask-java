@@ -1,6 +1,6 @@
 # Durable Task Protobuf Files
 
-This directory contains the protocol buffer definitions used by the Durable Task Framework Java SDK. The files in this directory are automatically downloaded and updated during the build process from the [microsoft/durabletask-protobuf](https://github.com/microsoft/durabletask-protobuf) repository.
+This directory contains the protocol buffer definitions used by the Durable Task Framework Java SDK. The files in this directory are automatically downloaded and updated during the build process from the [dapr/durabletask-protobuf](https://github.com/dapr/durabletask-protobuf) repository.
 
 ## Directory Structure
 

@@ -3,7 +3,7 @@
 
 syntax = "proto3";
 
-option csharp_namespace = "Microsoft.DurableTask.Protobuf";
+option csharp_namespace = "Dapr.DurableTask.Protobuf";
 option java_package = "io.dapr.durabletask.implementation.protobuf";
 option go_package = "/api/protos";
 
@@ -11,6 +11,11 @@ import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
+
+message TaskRouter {
+    string source = 1; // orchestrationAppID
+    string target = 2; // appID
+}
 
 message OrchestrationInstance {
     string instanceId = 1;
@@ -192,10 +197,10 @@ message EntityOperationCalledEvent {
 }
 
 message EntityLockRequestedEvent {
-    string criticalSectionId = 1;  
+    string criticalSectionId = 1;
     repeated string lockSet = 2;
     int32 position = 3;
-    google.protobuf.StringValue parentInstanceId = 4; // used only within messages, null in histories 
+    google.protobuf.StringValue parentInstanceId = 4; // used only within messages, null in histories
 }
 
 message EntityOperationCompletedEvent {
@@ -210,14 +215,14 @@ message EntityOperationFailedEvent {
 
 message EntityUnlockSentEvent {
     string criticalSectionId = 1;
-    google.protobuf.StringValue parentInstanceId = 2;  // used only within messages, null in histories 
+    google.protobuf.StringValue parentInstanceId = 2;  // used only within messages, null in histories
     google.protobuf.StringValue targetInstanceId = 3;  // used only within histories, null in messages
 }
 
 message EntityLockGrantedEvent {
     string criticalSectionId = 1;
 }
- 
+
 message HistoryEvent {
     int32 eventId = 1;
     google.protobuf.Timestamp timestamp = 2;
@@ -244,18 +249,20 @@ message HistoryEvent {
         ExecutionResumedEvent executionResumed = 22;
         EntityOperationSignaledEvent entityOperationSignaled = 23;
         EntityOperationCalledEvent entityOperationCalled = 24;
-        EntityOperationCompletedEvent entityOperationCompleted = 25; 
-        EntityOperationFailedEvent entityOperationFailed = 26; 
+        EntityOperationCompletedEvent entityOperationCompleted = 25;
+        EntityOperationFailedEvent entityOperationFailed = 26;
         EntityLockRequestedEvent entityLockRequested = 27;
         EntityLockGrantedEvent entityLockGranted = 28;
         EntityUnlockSentEvent entityUnlockSent = 29;
     }
+    optional TaskRouter router = 30;
 }
 
 message ScheduleTaskAction {
     string name = 1;
     google.protobuf.StringValue version = 2;
     google.protobuf.StringValue input = 3;
+    optional TaskRouter router = 4;
 }
 
 message CreateSubOrchestrationAction {
@@ -263,6 +270,7 @@ message CreateSubOrchestrationAction {
     string name = 2;
     google.protobuf.StringValue version = 3;
     google.protobuf.StringValue input = 4;
+    optional TaskRouter router = 5;
 }
 
 message CreateTimerAction {
@@ -311,6 +319,7 @@ message OrchestratorAction {
         TerminateOrchestrationAction terminateOrchestration = 7;
         SendEntityMessageAction sendEntityMessage = 8;
     }
+    optional TaskRouter router = 9;
 }
 
 message OrchestratorRequest {
@@ -320,6 +329,7 @@ message OrchestratorRequest {
     repeated HistoryEvent newEvents = 4;
     OrchestratorEntityParameters entityParameters = 5;
     bool requiresHistoryStreaming = 6;
+    optional TaskRouter router = 7;
 }
 
 message OrchestratorResponse {
