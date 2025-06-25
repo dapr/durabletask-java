@@ -1,3 +1,8 @@
+Verify Compilation:
+```shell
+./gradlew compileJava
+```
+
 Build & test:
 
 ```shell
