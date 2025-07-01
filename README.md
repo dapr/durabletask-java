@@ -16,6 +16,8 @@ result += ctx.callActivity("SayHello", "Seattle", String.class).await();
 return result;
 ```
 
+
+
 ### Reliable fan-out / fan-in orchestration pattern
 
 ```java

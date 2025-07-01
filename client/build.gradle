@@ -29,6 +29,7 @@ dependencies {
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+    
 
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core
     implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
