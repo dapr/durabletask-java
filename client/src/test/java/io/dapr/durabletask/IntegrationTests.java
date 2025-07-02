@@ -1033,6 +1033,7 @@ public class IntegrationTests extends IntegrationTestBase {
     }
 
     @RetryingTest
+    @Disabled("Test is disabled as is not supported by the sidecar")
     void purgeInstanceFilter() throws TimeoutException {
         final String orchestratorName = "PurgeInstance";
         final String plusOne = "PlusOne";
@@ -1064,6 +1065,8 @@ public class IntegrationTests extends IntegrationTestBase {
 
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
         try (worker; client) {
+            client.createTaskHub(true);
+            Instant startTime = Instant.now();
 
             String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName, 0);
             OrchestrationMetadata metadata = client.waitForInstanceCompletion(instanceId,  defaultTimeout, true);
@@ -1071,14 +1074,62 @@ public class IntegrationTests extends IntegrationTestBase {
             assertEquals(OrchestrationRuntimeStatus.COMPLETED, metadata.getRuntimeStatus());
             assertEquals(1, metadata.readOutputAs(int.class));
 
+            // Test CreatedTimeFrom
+            PurgeInstanceCriteria criteria = new PurgeInstanceCriteria();
+            criteria.setCreatedTimeFrom(startTime.minus(Duration.ofSeconds(1)));
 
-            PurgeResult result = client.purgeInstance(instanceId);
+            PurgeResult result = client.purgeInstances(criteria);
             assertEquals(1, result.getDeletedInstanceCount());
             metadata = client.getInstanceMetadata(instanceId, true);
             assertFalse(metadata.isInstanceFound());
+
+            // Test CreatedTimeTo
+            criteria.setCreatedTimeTo(Instant.now());
+
+            result = client.purgeInstances(criteria);
+            assertEquals(0, result.getDeletedInstanceCount());
+            metadata = client.getInstanceMetadata(instanceId, true);
+            assertFalse(metadata.isInstanceFound());
+
+            // Test CreatedTimeFrom, CreatedTimeTo, and RuntimeStatus
+            String instanceId1 = client.scheduleNewOrchestrationInstance(plusOne, 0);
+            metadata = client.waitForInstanceCompletion(instanceId1,  defaultTimeout, true);
+            assertNotNull(metadata);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, metadata.getRuntimeStatus());
+            assertEquals(1, metadata.readOutputAs(int.class));
+
+            String instanceId2 = client.scheduleNewOrchestrationInstance(plusTwo, 10);
+            metadata = client.waitForInstanceCompletion(instanceId2,  defaultTimeout, true);
+            assertNotNull(metadata);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, metadata.getRuntimeStatus());
+            assertEquals(12, metadata.readOutputAs(int.class));
+
+            String instanceId3 = client.scheduleNewOrchestrationInstance(terminate);
+            client.terminate(instanceId3, terminate);
+            metadata = client.waitForInstanceCompletion(instanceId3, defaultTimeout, true);
+            assertNotNull(metadata);
+            assertEquals(OrchestrationRuntimeStatus.TERMINATED, metadata.getRuntimeStatus());
+            assertEquals(terminate, metadata.readOutputAs(String.class));
+
+            HashSet<OrchestrationRuntimeStatus> runtimeStatusFilters = Stream.of(
+                    OrchestrationRuntimeStatus.TERMINATED,
+                    OrchestrationRuntimeStatus.COMPLETED
+            ).collect(Collectors.toCollection(HashSet::new));
+
+            criteria.setCreatedTimeTo(Instant.now());
+            criteria.setRuntimeStatusList(new ArrayList<>(runtimeStatusFilters));
+            result = client.purgeInstances(criteria);
+
+            assertEquals(3, result.getDeletedInstanceCount());
+            metadata = client.getInstanceMetadata(instanceId1, true);
+            assertFalse(metadata.isInstanceFound());
+            metadata = client.getInstanceMetadata(instanceId2, true);
+            assertFalse(metadata.isInstanceFound());
+            metadata = client.getInstanceMetadata(instanceId3, true);
+            assertFalse(metadata.isInstanceFound());
         }
     }
-
+ 
     @RetryingTest
     void purgeInstanceFilterTimeout() throws TimeoutException {
         final String orchestratorName = "PurgeInstance";
