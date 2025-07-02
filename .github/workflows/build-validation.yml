@@ -76,8 +76,7 @@ jobs:
       - name: Checkout Durable Task Sidecar
         uses: actions/checkout@v4
         with:
-          repository: javier-aliaga/durabletask-go
-          ref: upgrade-dockerfile
+          repository: dapr/durabletask-go
           path: durabletask-sidecar
 
         # TODO: Move the sidecar into a central image repository
