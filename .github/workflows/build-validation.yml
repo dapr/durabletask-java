@@ -76,12 +76,13 @@ jobs:
       - name: Checkout Durable Task Sidecar
         uses: actions/checkout@v4
         with:
-          repository: dapr/durabletask-go
+          repository: javier-aliaga/durabletask-go
+          ref: upgrade-dockerfile
           path: durabletask-sidecar
 
         # TODO: Move the sidecar into a central image repository
       - name: Initialize Durable Task Sidecar
-        run: docker run --name durabletask-sidecar -p 4001:4001 --rm -it $(docker build -q ./durabletask-sidecar)
+        run: docker run -d --name durabletask-sidecar -p 4001:4001 --rm -i $(docker build -q ./durabletask-sidecar)
 
       - name: Display Durable Task Sidecar Logs
         run: nohup docker logs --since=0 durabletask-sidecar > durabletask-sidecar.log 2>&1 &
