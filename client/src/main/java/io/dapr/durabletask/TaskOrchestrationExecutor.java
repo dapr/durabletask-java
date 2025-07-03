@@ -30,16 +30,19 @@ final class TaskOrchestrationExecutor {
     private final DataConverter dataConverter;
     private final Logger logger;
     private final Duration maximumTimerInterval;
+    private final String appId;
 
     public TaskOrchestrationExecutor(
             HashMap<String, TaskOrchestrationFactory> orchestrationFactories,
             DataConverter dataConverter,
             Duration maximumTimerInterval,
-            Logger logger) {
+            Logger logger,
+            String appId) {
         this.orchestrationFactories = orchestrationFactories;
         this.dataConverter = dataConverter;
         this.maximumTimerInterval = maximumTimerInterval;
         this.logger = logger;
+        this.appId = appId; // extracted from router
     }
 
     public TaskOrchestratorResult execute(List<HistoryEvent> pastEvents, List<HistoryEvent> newEvents) {
@@ -51,6 +54,7 @@ final class TaskOrchestrationExecutor {
             // or we receive a yield signal
             while (context.processNextEvent()) { /* no method body */ }
             completed = true;
+            logger.finest("The orchestrator execution completed normally");
         } catch (OrchestratorBlockedException orchestratorBlockedException) {
             logger.fine("The orchestrator has yielded and will await for new events.");
         } catch (ContinueAsNewInterruption continueAsNewInterruption) {
@@ -81,6 +85,7 @@ final class TaskOrchestrationExecutor {
         private boolean isSuspended;
         private boolean isReplaying = true;
         private int newUUIDCounter;
+        private String appId;
 
         // LinkedHashMap to maintain insertion order when returning the list of pending actions
         private final LinkedHashMap<Integer, OrchestratorAction> pendingActions = new LinkedHashMap<>();
@@ -135,6 +140,11 @@ final class TaskOrchestrationExecutor {
         private void setInstanceId(String instanceId) {
             // TODO: Throw if instance ID is not null
             this.instanceId = instanceId;
+        }
+
+        @Override
+        public String getAppId() {
+            return this.appId;
         }
 
         @Override
@@ -270,12 +280,37 @@ final class TaskOrchestrationExecutor {
                 scheduleTaskBuilder.setInput(StringValue.of(serializedInput));
             }
 
+            // Add router information for cross-app routing
+            // Router always has a source app ID from EXECUTIONSTARTED event
+            TaskRouter.Builder routerBuilder = TaskRouter.newBuilder()
+                .setSource(this.appId);
+
+            // Add target app ID if specified in options
+            if (options != null && options.hasAppID()) {
+                String targetAppId = options.getAppID();
+                routerBuilder.setTarget(targetAppId);
+                this.logger.fine(() -> String.format(
+                "cross app routing detected: source=%s, target=%s",
+                this.appId, targetAppId));
+        }
+            TaskRouter router = routerBuilder.build();
+            scheduleTaskBuilder.setRouter(router);
             TaskFactory<V> taskFactory = () -> {
                 int id = this.sequenceNumber++;
-                this.pendingActions.put(id, OrchestratorAction.newBuilder()
+                
+                ScheduleTaskAction scheduleTaskAction = scheduleTaskBuilder.build();
+                OrchestratorAction.Builder actionBuilder = OrchestratorAction.newBuilder()
                         .setId(id)
-                        .setScheduleTask(scheduleTaskBuilder)
-                        .build());
+                        .setScheduleTask(scheduleTaskBuilder);
+                TaskRouter.Builder actionRouterBuilder = TaskRouter.newBuilder()
+                        .setSource(this.appId);
+                if (options != null && options.hasAppID()) {
+                    String targetAppId = options.getAppID();
+                    actionRouterBuilder.setTarget(targetAppId);
+                }
+                
+                actionBuilder.setRouter(actionRouterBuilder.build());
+                this.pendingActions.put(id, actionBuilder.build());
 
                 if (!this.isReplaying) {
                     this.logger.fine(() -> String.format(
@@ -337,11 +372,11 @@ final class TaskOrchestrationExecutor {
             if (serializedEventData != null){
                 builder.setData(StringValue.of(serializedEventData));
             }
+            OrchestratorAction.Builder actionBuilder = OrchestratorAction.newBuilder()
+                .setId(id)
+                .setSendEvent(builder);
 
-            this.pendingActions.put(id, OrchestratorAction.newBuilder()
-                    .setId(id)
-                    .setSendEvent(builder)
-                    .build());
+            this.pendingActions.put(id, actionBuilder.build());
 
             if (!this.isReplaying) {
                 this.logger.fine(() -> String.format(
@@ -379,6 +414,7 @@ final class TaskOrchestrationExecutor {
             }
             createSubOrchestrationActionBuilder.setInstanceId(instanceId);
 
+            // TODO: @cicoyle - add suborchestration cross app logic here when its supported
             TaskFactory<V> taskFactory = () -> {
                 int id = this.sequenceNumber++;
                 this.pendingActions.put(id, OrchestratorAction.newBuilder()
@@ -821,33 +857,42 @@ final class TaskOrchestrationExecutor {
             if (this.isSuspended && !overrideSuspension) {
                 this.handleEventWhileSuspended(e);
             } else {
+                this.logger.fine(() -> this.instanceId + ": Processing event: " + e.getEventTypeCase());
                 switch (e.getEventTypeCase()) {
                     case ORCHESTRATORSTARTED:
                         Instant instant = DataConverter.getInstantFromTimestamp(e.getTimestamp());
                         this.setCurrentInstant(instant);
+                        this.logger.fine(() -> this.instanceId + ": Workflow orchestrator started");
                         break;
                     case ORCHESTRATORCOMPLETED:
-                        // No action
+                        // No action needed
+                        this.logger.fine(() -> this.instanceId + ": Workflow orchestrator completed");
                         break;
                     case EXECUTIONSTARTED:
-                        ExecutionStartedEvent startedEvent = e.getExecutionStarted();
-                        String name = startedEvent.getName();
-                        this.setName(name);
-                        String instanceId = startedEvent.getOrchestrationInstance().getInstanceId();
-                        this.setInstanceId(instanceId);
-                        String input = startedEvent.getInput().getValue();
-                        this.setInput(input);
-                        TaskOrchestrationFactory factory = TaskOrchestrationExecutor.this.orchestrationFactories.get(name);
+                        ExecutionStartedEvent executionStarted = e.getExecutionStarted();
+                        this.setName(executionStarted.getName());
+                        this.setInput(executionStarted.getInput().getValue());
+                        this.setInstanceId(executionStarted.getOrchestrationInstance().getInstanceId());
+                        this.logger.fine(() -> this.instanceId + ": Workflow execution started");
+                        this.appId = e.getRouter().getSource();
+
+                        // Create and invoke the workflow orchestrator
+                        TaskOrchestrationFactory factory = TaskOrchestrationExecutor.this.orchestrationFactories.get(executionStarted.getName());
                         if (factory == null) {
                             // Try getting the default orchestrator
                             factory = TaskOrchestrationExecutor.this.orchestrationFactories.get("*");
                         }
                         // TODO: Throw if the factory is null (orchestration by that name doesn't exist)
+                        if (factory == null) {
+                            throw new IllegalStateException("No factory found for orchestrator: " + executionStarted.getName());
+                        }
+                        
                         TaskOrchestration orchestrator = factory.create();
                         orchestrator.run(this);
                         break;
-//                case EXECUTIONCOMPLETED:
-//                    break;
+                   case EXECUTIONCOMPLETED:
+                       this.logger.fine(() -> this.instanceId + ": Workflow execution completed");
+                        break;
 //                case EXECUTIONFAILED:
 //                    break;
                     case EXECUTIONTERMINATED:

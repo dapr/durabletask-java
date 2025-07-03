@@ -12,6 +12,7 @@ public final class NewOrchestrationInstanceOptions {
     private String instanceId;
     private Object input;
     private Instant startTime;
+    private String appID; // Target app ID for cross-app workflow routing
 
     /**
      * Default constructor for the {@link NewOrchestrationInstanceOptions} class.
@@ -72,6 +73,17 @@ public final class NewOrchestrationInstanceOptions {
     }
 
     /**
+     * Sets the target app ID for cross-app workflow routing.
+     *
+     * @param appID the target app ID for cross-app routing
+     * @return this {@link NewOrchestrationInstanceOptions} object
+     */
+    public NewOrchestrationInstanceOptions setAppID(String appID) {
+        this.appID = appID;
+        return this;
+    }
+
+    /**
      * Gets the user-specified version of the new orchestration.
      *
      * @return the user-specified version of the new orchestration.
@@ -105,5 +117,23 @@ public final class NewOrchestrationInstanceOptions {
      */
     public Instant getStartTime() {
         return this.startTime;
+    }
+
+    /**
+     * Gets the configured target app ID for cross-app workflow routing.
+     *
+     * @return the configured target app ID
+     */
+    public String getAppID() {
+        return this.appID;
+    }
+
+    /**
+     * Checks if an app ID is configured for cross-app routing.
+     *
+     * @return true if an app ID is configured, false otherwise
+     */
+    public boolean hasAppID() {
+        return this.appID != null && !this.appID.isEmpty();
     }
 }

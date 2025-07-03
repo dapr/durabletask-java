@@ -21,6 +21,7 @@ public final class DurableTaskGrpcWorkerBuilder {
     DataConverter dataConverter;
     Duration maximumTimerInterval;
     ExecutorService executorService;
+    String appId; // App ID for cross-app routing
 
     /**
      * Adds an orchestration factory to be used by the constructed {@link DurableTaskGrpcWorker}.
@@ -125,6 +126,21 @@ public final class DurableTaskGrpcWorkerBuilder {
      */
     public DurableTaskGrpcWorkerBuilder withExecutorService(ExecutorService executorService) {
         this.executorService = executorService;
+        return this;
+    }
+
+    /**
+     * Sets the app ID for cross-app workflow routing.
+     * <p>
+     * This app ID is used to identify this worker in cross-app routing scenarios.
+     * It should match the app ID configured in the Dapr sidecar.
+     * <p>
+     *
+     * @param appId the app ID for this worker
+     * @return this builder object
+     */
+    public DurableTaskGrpcWorkerBuilder appId(String appId) {
+        this.appId = appId;
         return this;
     }
 
