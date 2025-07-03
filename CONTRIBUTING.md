@@ -20,3 +20,18 @@ When updating the protobuf definitions in `internal/durabletask-protobuf/protos/
 ```shell
 ./gradlew generateProto
 ```
+
+## Test locally from dapr/java-sdk
+
+```shell
+./gradlew publishToMavenLocal
+```
+
+or simply `./gradlew build publishToMavenLocal`
+
+Check if it was released locally with:
+```shell
+ls ~/.m2/repository/io/dapr/durabletask-client/ 
+```
+
+Then update the durabletask-client in the java-sdk pom.xml file to the newest version you released locally.

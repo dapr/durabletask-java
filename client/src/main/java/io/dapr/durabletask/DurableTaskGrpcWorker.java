@@ -36,6 +36,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     private final DataConverter dataConverter;
     private final Duration maximumTimerInterval;
     private final ExecutorService workerPool;
+    private final String appId; // App ID for cross-app routing
 
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
     private final boolean isExecutorServiceManaged;
@@ -45,6 +46,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     DurableTaskGrpcWorker(DurableTaskGrpcWorkerBuilder builder) {
         this.orchestrationFactories.putAll(builder.orchestrationFactories);
         this.activityFactories.putAll(builder.activityFactories);
+        this.appId = builder.appId;
 
         Channel sidecarGrpcChannel;
         if (builder.channel != null) {
@@ -128,7 +130,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                 this.orchestrationFactories,
                 this.dataConverter,
                 this.maximumTimerInterval,
-                logger);
+                logger,
+                this.appId);
         TaskActivityExecutor taskActivityExecutor = new TaskActivityExecutor(
                 this.activityFactories,
                 this.dataConverter,
@@ -143,6 +146,9 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                     RequestCase requestType = workItem.getRequestCase();
                     if (requestType == RequestCase.ORCHESTRATORREQUEST) {
                         OrchestratorRequest orchestratorRequest = workItem.getOrchestratorRequest();
+                        logger.log(Level.FINEST,
+                                String.format("Processing orchestrator request for instance: {0}",
+                            orchestratorRequest.getInstanceId()));
 
                         // TODO: Error handling
                         this.workerPool.submit(() -> {
@@ -159,6 +165,9 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
 
                             try {
                                 this.sidecarClient.completeOrchestratorTask(response);
+                                logger.log(Level.FINEST,
+                                        "Completed orchestrator request for instance: {0}",
+                                    orchestratorRequest.getInstanceId());
                             } catch (StatusRuntimeException e) {
                                 if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
                                     logger.log(Level.WARNING,
@@ -177,7 +186,12 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                         });
                     } else if (requestType == RequestCase.ACTIVITYREQUEST) {
                         ActivityRequest activityRequest = workItem.getActivityRequest();
+                        logger.log(Level.FINEST,
+                                String.format("Processing activity request: %s for instance: %s}",
+                                    activityRequest.getName(),
+                                    activityRequest.getOrchestrationInstance().getInstanceId()));
 
+                        // TODO: Error handling
                         this.workerPool.submit(() -> {
                             String output = null;
                             TaskFailureDetails failureDetails = null;
@@ -227,7 +241,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                     } else if (requestType == RequestCase.HEALTHPING) {
                         // No-op
                     } else {
-                        logger.log(Level.WARNING, "Received and dropped an unknown '{0}' work-item from the sidecar.",
+                        logger.log(Level.WARNING,
+                                "Received and dropped an unknown '{0}' work-item from the sidecar.",
                                 requestType);
                     }
                 }

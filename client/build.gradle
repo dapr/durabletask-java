@@ -26,6 +26,7 @@ dependencies {
     // https://github.com/grpc/grpc-java#download
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation 'com.google.protobuf:protobuf-java:3.25.5'
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
@@ -192,6 +193,10 @@ publishing {
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+tasks.named('sourcesJar').configure {
+    dependsOn tasks.named('generateProto')
 }
 
 spotbugs {

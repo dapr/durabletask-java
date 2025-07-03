@@ -14,7 +14,7 @@ import "google/protobuf/empty.proto";
 
 message TaskRouter {
     string source = 1; // orchestrationAppID
-    string target = 2; // appID
+    optional string target = 2; // appID
 }
 
 message OrchestrationInstance {
@@ -29,6 +29,7 @@ message ActivityRequest {
     OrchestrationInstance orchestrationInstance = 4;
     int32 taskId = 5;
     TraceContext parentTraceContext = 6;
+    string taskExecutionId = 7;
 }
 
 message ActivityResponse {
@@ -99,16 +100,19 @@ message TaskScheduledEvent {
     google.protobuf.StringValue version = 2;
     google.protobuf.StringValue input = 3;
     TraceContext parentTraceContext = 4;
+    string taskExecutionId = 5;
 }
 
 message TaskCompletedEvent {
     int32 taskScheduledId = 1;
     google.protobuf.StringValue result = 2;
+    string taskExecutionId = 3;
 }
 
 message TaskFailedEvent {
     int32 taskScheduledId = 1;
     TaskFailureDetails failureDetails = 2;
+    string taskExecutionId = 3;
 }
 
 message SubOrchestrationInstanceCreatedEvent {
@@ -263,6 +267,7 @@ message ScheduleTaskAction {
     google.protobuf.StringValue version = 2;
     google.protobuf.StringValue input = 3;
     optional TaskRouter router = 4;
+    string taskExecutionId = 5;
 }
 
 message CreateSubOrchestrationAction {
