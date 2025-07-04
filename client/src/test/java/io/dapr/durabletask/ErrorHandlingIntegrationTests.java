@@ -3,9 +3,10 @@
 
 package io.dapr.durabletask;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
@@ -13,9 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Tag;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.provider.ValueSource;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * These integration tests are designed to exercise the core, high-level error-handling features of the Durable Task
@@ -26,11 +25,6 @@ import org.junit.jupiter.params.provider.ValueSource;
  */
 @Tag("integration")
 public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
-
-    @BeforeEach
-    private void startUp() {
-    }
-
     @Test
     void orchestratorException() throws TimeoutException {
         final String orchestratorName = "OrchestratorWithException";

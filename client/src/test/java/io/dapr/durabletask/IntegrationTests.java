@@ -54,12 +54,6 @@ public class IntegrationTests extends IntegrationTestBase {
     // All tests that create a server should save it to this variable for proper shutdown
     private DurableTaskGrpcWorker server;
 
-    // Before whole test suite, delete the task hub
-    @BeforeEach
-    private void startUp() {
-      
-    }
-
     @AfterEach
     private void shutdown() throws InterruptedException {
         if (this.server != null) {
