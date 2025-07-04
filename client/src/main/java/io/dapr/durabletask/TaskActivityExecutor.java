@@ -19,7 +19,7 @@ final class TaskActivityExecutor {
         this.logger = logger;
     }
 
-    public String execute(String taskName, String input, int taskId) throws Throwable {
+    public String execute(String taskName, String input, String taskExecutionId) throws Throwable {
         TaskActivityFactory factory = this.activityFactories.get(taskName);
         if (factory == null) {
             throw new IllegalStateException(
@@ -32,7 +32,7 @@ final class TaskActivityExecutor {
                     String.format("The task factory '%s' returned a null TaskActivity object.", taskName));
         }
 
-        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input);
+        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input, taskExecutionId);
 
         // Unhandled exceptions are allowed to escape
         Object output = activity.run(context);
@@ -46,12 +46,14 @@ final class TaskActivityExecutor {
     private class TaskActivityContextImpl implements TaskActivityContext {
         private final String name;
         private final String rawInput;
+        private final String taskExecutionId;
 
         private final DataConverter dataConverter = TaskActivityExecutor.this.dataConverter;
 
-        public TaskActivityContextImpl(String activityName, String rawInput) {
+        public TaskActivityContextImpl(String activityName, String rawInput, String taskExecutionId) {
             this.name = activityName;
             this.rawInput = rawInput;
+            this.taskExecutionId = taskExecutionId;
         }
 
         @Override
@@ -66,6 +68,11 @@ final class TaskActivityExecutor {
             }
 
             return this.dataConverter.deserialize(this.rawInput, targetType);
+        }
+
+        @Override
+        public String getTaskExecutionId() {
+            return this.taskExecutionId;
         }
     }
 }

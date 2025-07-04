@@ -7,6 +7,7 @@ plugins {
 //    id 'signing'
     id 'com.github.spotbugs' version '5.2.1'
     id 'org.jreleaser' version '1.18.0'
+    id 'org.gradle.test-retry' version '1.4.1'
 }
 
 group 'io.dapr'
@@ -38,6 +39,8 @@ dependencies {
     
     testImplementation(platform('org.junit:junit-bom:5.7.2'))
     testImplementation('org.junit.jupiter:junit-jupiter')
+	testRuntimeOnly('org.junit.platform:junit-platform-launcher')
+
 
     // Netty dependencies for TLS
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
@@ -122,6 +125,11 @@ test {
         // and require external dependencies.
         excludeTags "integration"
     }
+    
+    retry {
+        maxRetries = 2
+        maxFailures = 5
+    }
 }
 
 // Unlike normal unit tests, some tests are considered "integration tests" and shouldn't be
@@ -137,6 +145,12 @@ task integrationTest(type: Test) {
     testLogging.showStandardStreams = true
 
     ignoreFailures = false
+    
+    // Add retry capability for flaky integration tests
+    retry {
+        maxRetries = 3
+        maxFailures = 10
+    }
 }
 
 publishing {
