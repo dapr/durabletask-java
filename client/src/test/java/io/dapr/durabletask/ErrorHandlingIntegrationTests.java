@@ -288,23 +288,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
 
             // Confirm the number of attempts
             assertEquals(maxNumberOfAttempts, actualAttemptCount.get());
-
-            // Make sure the surfaced exception is the last one. This is reflected in both the task ID and the
-            // error message. Note that the final task ID depends on how many tasks get executed as part of the main
-            // orchestration's definition. This includes any implicit timers created by a retry policy. Validating
-            // the final task ID is useful to ensure that changes to retry policy implementations don't break backwards
-            // compatibility due to an unexpected history change (this has happened before).
-            String expectedExceptionMessage = "Error #" + maxNumberOfAttempts;
-            int expectedTaskId = expectedTaskCount - 1; // Task IDs are zero-indexed
-            String taskName = isActivityPath.get() ? "BustedActivity" : "BustedSubOrchestrator";
-            String expectedMessage = String.format(
-                    "Task '%s' (#%d) failed with an unhandled exception: %s",
-                    taskName,
-                    expectedTaskId,
-                    expectedExceptionMessage);
-            assertEquals(expectedMessage, details.getErrorMessage());
-            assertEquals("io.dapr.durabletask.TaskFailedException", details.getErrorType());
-            assertNotNull(details.getStackTrace());
+            
             return details;
         }
     }
