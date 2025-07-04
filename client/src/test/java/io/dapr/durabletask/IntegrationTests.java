@@ -33,7 +33,6 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -1062,7 +1061,6 @@ public class IntegrationTests extends IntegrationTestBase {
 
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
         try (worker; client) {
-            client.createTaskHub(true);
             Instant startTime = Instant.now();
 
             String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName, 0);
@@ -1616,7 +1614,6 @@ public class IntegrationTests extends IntegrationTestBase {
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
 
         try(worker; client) {
-            client.createTaskHub(true);
             String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName);
             OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, defaultTimeout, true);
             assertNotNull(instance);
