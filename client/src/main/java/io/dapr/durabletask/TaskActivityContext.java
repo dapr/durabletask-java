@@ -28,4 +28,10 @@ public interface TaskActivityContext {
      * @return the execution id of the current task activity
      */
     String getTaskExecutionId();
+
+    /**
+     * Gets the task id of the current task activity.
+     * @return the task id of the current task activity
+     */
+    int getTaskId();
 }
