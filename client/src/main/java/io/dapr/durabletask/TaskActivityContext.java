@@ -21,4 +21,17 @@ public interface TaskActivityContext {
      * @return the deserialized activity input value
      */
     <T> T getInput(Class<T> targetType);
+
+
+    /**
+     * Gets the execution id of the current task activity.
+     * @return the execution id of the current task activity
+     */
+    String getTaskExecutionId();
+
+    /**
+     * Gets the task id of the current task activity.
+     * @return the task id of the current task activity
+     */
+    int getTaskId();
 }
