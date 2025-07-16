@@ -257,6 +257,7 @@ jreleaser {
         armored = true
         verify = false
     }
+
     deploy {
         maven {
             nexus2 {
