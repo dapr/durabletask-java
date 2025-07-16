@@ -86,4 +86,6 @@ jobs:
         run: ./gradlew publish  --stacktrace
         
       - name: Publish to ossrh
-        run: ./gradlew jreleaserFullRelease --stacktrace
+        run: |
+          ./gradlew jreleaserFullRelease --stacktrace
+          curl -X POST https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.dapr
