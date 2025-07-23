@@ -15,12 +15,12 @@ jobs:
     timeout-minutes: 30
     env:
       JDK_VER: 11
-      JRELEASER_GITHUB_TOKEN: $${{ secrets.GITHUB_TOKEN }}
+      JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.GPG_KEY }}
       JRELEASER_GPG_SECRET_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       JRELEASER_GPG_PASSPHRASE: ${{ secrets.GPG_PWD }}
       JRELEASER_NEXUS2_MAVEN_CENTRAL_USERNAME: dapr.io
-      JRELEASER_NEXUS2_MAVEN_CENTRAL_TOKEN:  ${{ secrets.OSSRH_USER_PASS }}
+      JRELEASER_NEXUS2_MAVEN_CENTRAL_TOKEN: ${{ secrets.OSSRH_USER_PASS }}
       JRELEASER_DEPLOY_MAVEN_NEXUS2_USERNAME: ${{ secrets.OSSRH_USER_TOKEN }}
       JRELEASER_DEPLOY_MAVEN_NEXUS2_TOKEN: ${{ secrets.OSSRH_PWD_TOKEN }}
     steps:
@@ -86,4 +86,6 @@ jobs:
         run: ./gradlew publish  --stacktrace
         
       - name: Publish to ossrh
-        run: ./gradlew jreleaserFullRelease --stacktrace
+        run: |
+          ./gradlew jreleaserFullRelease --stacktrace
+          curl -X POST https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.dapr

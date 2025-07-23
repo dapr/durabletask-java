@@ -199,6 +199,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                 output = taskActivityExecutor.execute(
                                         activityRequest.getName(),
                                         activityRequest.getInput().getValue(),
+                                        activityRequest.getTaskExecutionId(),
                                         activityRequest.getTaskId());
                             } catch (Throwable e) {
                                 failureDetails = TaskFailureDetails.newBuilder()

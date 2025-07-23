@@ -275,7 +275,7 @@ final class TaskOrchestrationExecutor {
             }
 
             String serializedInput = this.dataConverter.serialize(input);
-            Builder scheduleTaskBuilder = ScheduleTaskAction.newBuilder().setName(name);
+            Builder scheduleTaskBuilder = ScheduleTaskAction.newBuilder().setName(name).setTaskExecutionId(newUUID().toString());
             if (serializedInput != null) {
                 scheduleTaskBuilder.setInput(StringValue.of(serializedInput));
             }
