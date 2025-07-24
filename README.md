@@ -5,6 +5,11 @@
 
 This repo contains the Java SDK for the Durable Task Framework as well as classes and annotations to support running [Azure Durable Functions](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=java) for Java. With this SDK, you can define, schedule, and manage durable orchestrations using ordinary Java code.
 
+## Requirements
+
+- **Java 11 or higher** - This SDK requires Java 11 as the minimum version
+- **Gradle** - The project uses [Gradle 7.6.4](gradle/wrapper/gradle-wrapper.properties)
+
 ### Simple, fault-tolerant sequences
 
 ```java

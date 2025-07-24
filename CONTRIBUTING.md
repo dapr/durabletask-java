@@ -9,6 +9,21 @@ Build & test:
 ./gradlew build
 ```
 
+## Verify Build Components
+
+To ensure all build components work correctly after making changes:
+
+```shell
+# Build without tests
+./gradlew build -x test
+
+# Run unit tests
+./gradlew test
+
+# Run SpotBugs
+./gradlew spotbugsMain
+```
+
 ## Updating Protobuf Definitions
 
 When updating the protobuf definitions in `internal/durabletask-protobuf/protos/orchestrator_service.proto`:

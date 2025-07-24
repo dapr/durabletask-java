@@ -25,17 +25,6 @@ jobs:
         uses: actions/setup-java@v2
         with:
           java-version: '11'
-          distribution: 'microsoft'
-
-      - name: set JDK_11 environment variable test compiling and running
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: echo ::set-env name=JDK_11::$(echo $JAVA_HOME)
-
-      - name: Set up JDK 8
-        uses: actions/setup-java@v2
-        with:
-          java-version: '8'
           distribution: 'temurin'
 
       - name: Setup Gradle
@@ -57,7 +46,6 @@ jobs:
 
       - name: Run Unit Tests with Gradle
         run: |
-          export JAVA_HOME=$JDK_11
           ./gradlew clean test || echo "UNIT_TEST_FAILED=true" >> $GITHUB_ENV
         continue-on-error: true
 

@@ -17,10 +17,7 @@ archivesBaseName = 'durabletask-client'
 def grpcVersion = '1.69.0'
 def protocVersion = '3.25.5'
 def jacksonVersion = '2.15.3'
-// When build on local, you need to set this value to your local jdk11 directory.
-// Java11 is used to compile and run all the tests.
-// Example for Windows:  C:/Program Files/Java/openjdk-11.0.12_7/
-def PATH_TO_TEST_JAVA_RUNTIME = System.env.JDK_11 ?: System.getProperty("java.home")
+// Java 11 is now the minimum required version for both compilation and testing
 
 dependencies {
 
@@ -53,18 +50,17 @@ dependencies {
     testImplementation 'io.netty:netty-handler:4.1.119.Final'
     testImplementation "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
 
-    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.78'
+    testImplementation 'org.bouncycastle:bcprov-jdk15on:1.70'
+    testImplementation 'org.bouncycastle:bcpkix-jdk15on:1.70'
 }
 
 compileJava {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 compileTestJava {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-    options.fork = true
-    options.forkOptions.executable = "${PATH_TO_TEST_JAVA_RUNTIME}/bin/javac"
 }
 
 task downloadProtoFiles {
@@ -113,10 +109,6 @@ sourceSets {
             srcDirs 'build/generated/source/proto/main/java'
         }
     }
-}
-
-tasks.withType(Test) {
-    executable = new File("${PATH_TO_TEST_JAVA_RUNTIME}", 'bin/java')
 }
 
 test {
