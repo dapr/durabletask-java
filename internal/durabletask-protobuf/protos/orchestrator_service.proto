@@ -13,8 +13,8 @@ import "google/protobuf/wrappers.proto";
 import "google/protobuf/empty.proto";
 
 message TaskRouter {
-    string source = 1; // orchestrationAppID
-    optional string target = 2; // appID
+    string sourceAppID = 1;
+    optional string targetAppID = 2;
 }
 
 message OrchestrationInstance {
@@ -64,6 +64,7 @@ message ParentInstanceInfo {
     google.protobuf.StringValue name = 2;
     google.protobuf.StringValue version = 3;
     OrchestrationInstance orchestrationInstance = 4;
+    optional string appID = 5;
 }
 
 message TraceContext {

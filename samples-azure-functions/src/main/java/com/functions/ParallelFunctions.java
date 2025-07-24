@@ -33,7 +33,7 @@ public class ParallelFunctions {
     public List<String> parallelOrchestratorSad(
             @DurableOrchestrationTrigger(name = "ctx") TaskOrchestrationContext ctx) {
         RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(5));
-        TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
         List<Task<String>> tasks = new ArrayList<>();
         tasks.add(ctx.callActivity("AppendSad", "Input1", taskOptions, String.class));
         tasks.add(ctx.callActivity("AppendSad", "Input2", taskOptions, String.class));
@@ -82,7 +82,7 @@ public class ParallelFunctions {
     public Object parallelAnyOf(
             @DurableOrchestrationTrigger(name = "ctx") TaskOrchestrationContext ctx) {
         RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(5));
-        TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
         List<Task<?>> tasks = new ArrayList<>();
         tasks.add(ctx.callActivity("AppendHappy", "AnyOf1", taskOptions, String.class));
         tasks.add(ctx.callActivity("AppendHappy", "AnyOf2", String.class));
@@ -110,7 +110,7 @@ public class ParallelFunctions {
         try {
             List<Task<String>> tasks = new ArrayList<>();
             RetryPolicy policy = new RetryPolicy(2, Duration.ofSeconds(1));
-            TaskOptions options = new TaskOptions(policy);
+            TaskOptions options = TaskOptions.withRetryPolicy(policy);
             tasks.add(ctx.callActivity("AlwaysException", "Input1", options, String.class));
             tasks.add(ctx.callActivity("AppendHappy", "Input2", options, String.class));
             return ctx.allOf(tasks).await();

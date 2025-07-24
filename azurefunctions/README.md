@@ -6,7 +6,7 @@ In this article, you follow steps to create and run a simple azure durable funct
 
 The following are the requirements for you local environment:
 
-- The Java Developer Kit, version 8 or 11, is required. Between the two, JDK 11 is recommended.
+- The Java Developer Kit, version 11 or higher, is required.
 - The `JAVA_HOME` environment variable must be set to the install location of the correct version of the JDK.
 - [Apache Maven](https://maven.apache.org/), version 3.0 or above for azure function app creation, is required for using automatic project creation tools. 
   - If Maven isn't your preferred development tool, check out our similar tutorials to [create a function app](https://docs.microsoft.com/en-us/azure/azure-functions/create-first-function-cli-java?tabs=bash%2Cazure-cli%2Cbrowser). This README also contains instructions for [Gradle](https://gradle.org/).

@@ -112,7 +112,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
             ctx.callActivity(
                     "BustedActivity",
                     null,
-                    new TaskOptions(retryPolicy)).await();
+                    TaskOptions.withRetryPolicy(retryPolicy)).await();
         });
     }
 
@@ -125,7 +125,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
         // Run the test and get back the details of the last failure
         this.retryOnFailuresCoreTest(maxNumberOfAttempts, maxNumberOfAttempts, ctx -> {
             RetryHandler retryHandler = getCommonRetryHandler(retryHandlerCalls, maxNumberOfAttempts);
-            TaskOptions options = new TaskOptions(retryHandler);
+            TaskOptions options = TaskOptions.withRetryHandler(retryHandler);
             ctx.callActivity("BustedActivity", null, options).await();
         });
 
@@ -194,7 +194,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
                         "BustedSubOrchestrator",
                         null,
                         null,
-                        new TaskOptions(retryPolicy)).await();
+                        TaskOptions.withRetryPolicy(retryPolicy)).await();
             });
     }
 
@@ -207,7 +207,7 @@ public class ErrorHandlingIntegrationTests extends IntegrationTestBase {
         // Run the test and get back the details of the last failure
         this.retryOnFailuresCoreTest(maxNumberOfAttempts, maxNumberOfAttempts, ctx -> {
             RetryHandler retryHandler = getCommonRetryHandler(retryHandlerCalls, maxNumberOfAttempts);
-            TaskOptions options = new TaskOptions(retryHandler);
+            TaskOptions options = TaskOptions.withRetryHandler(retryHandler);
             ctx.callSubOrchestrator("BustedSubOrchestrator", null, null, options).await();
         });
 

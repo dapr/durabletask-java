@@ -1370,7 +1370,7 @@ public class IntegrationTests extends IntegrationTestBase {
         final int activityCount = 10;
         final AtomicBoolean throwException = new AtomicBoolean(true);
         final RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(5));
-        final TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        final TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
 
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
                 .addOrchestrator(orchestratorName, ctx -> {
@@ -1428,7 +1428,7 @@ public class IntegrationTests extends IntegrationTestBase {
         final String result = "test fail";
         final int activityMiddle = 5;
         final RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(5));
-        final TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        final TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
 
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
                 .addOrchestrator(orchestratorName, ctx -> {
@@ -1491,7 +1491,7 @@ public class IntegrationTests extends IntegrationTestBase {
         final int activityCount = 10;
         final AtomicBoolean throwException = new AtomicBoolean(true);
         final RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(5));
-        final TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        final TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
 
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
                 .addOrchestrator(orchestratorName, ctx -> {
@@ -1585,7 +1585,7 @@ public class IntegrationTests extends IntegrationTestBase {
         var orchestratorName = "test-task-execution-id";
         var retryActivityName = "RetryN";
         final RetryPolicy retryPolicy = new RetryPolicy(4, Duration.ofSeconds(3));
-        final TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        final TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
 
         var execMap = new HashMap<String, Integer>();
 
