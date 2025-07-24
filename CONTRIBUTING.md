@@ -21,7 +21,7 @@ To ensure all build components work correctly after making changes:
 ./gradlew test
 
 # Run SpotBugs
-./gradlew spotbugsMain
+./gradlew spotbugsMain spotbugsTest
 ```
 
 ## Updating Protobuf Definitions
