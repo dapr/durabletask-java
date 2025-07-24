@@ -22,3 +22,5 @@ If you need to manually update the proto files, you can run:
 ```bash
 ./gradlew downloadProtoFiles -PprotoBranch=<branch-name>
 ```
+
+See [here for more instructions.](../../CONTRIBUTING.md#updating-protobuf-definitions)

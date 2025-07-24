@@ -42,7 +42,7 @@ public class RetriableTask {
     public String retriableTask(
             @DurableOrchestrationTrigger(name = "ctx") TaskOrchestrationContext ctx) {
         RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(1));
-        TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
         return ctx.callActivity("Append", "Test-Input", taskOptions, String.class).await();
     }
 
@@ -88,7 +88,7 @@ public class RetriableTask {
     public String retriableTaskFail(
             @DurableOrchestrationTrigger(name = "ctx") TaskOrchestrationContext ctx) {
         RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(1));
-        TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
         return ctx.callActivity("AppendFail", "Test-Input", taskOptions, String.class).await();
     }
 
@@ -96,7 +96,7 @@ public class RetriableTask {
     public String retriableTaskSuccess(
             @DurableOrchestrationTrigger(name = "ctx") TaskOrchestrationContext ctx) {
         RetryPolicy retryPolicy = new RetryPolicy(3, Duration.ofSeconds(1));
-        TaskOptions taskOptions = new TaskOptions(retryPolicy);
+        TaskOptions taskOptions = TaskOptions.withRetryPolicy(retryPolicy);
         return ctx.callActivity("AppendSuccess", "Test-Input", taskOptions, String.class).await();
     }
 

@@ -283,12 +283,12 @@ final class TaskOrchestrationExecutor {
             // Add router information for cross-app routing
             // Router always has a source app ID from EXECUTIONSTARTED event
             TaskRouter.Builder routerBuilder = TaskRouter.newBuilder()
-                .setSource(this.appId);
+                .setSourceAppID(this.appId);
 
             // Add target app ID if specified in options
             if (options != null && options.hasAppID()) {
                 String targetAppId = options.getAppID();
-                routerBuilder.setTarget(targetAppId);
+                routerBuilder.setTargetAppID(targetAppId);
                 this.logger.fine(() -> String.format(
                 "cross app routing detected: source=%s, target=%s",
                 this.appId, targetAppId));
@@ -303,10 +303,10 @@ final class TaskOrchestrationExecutor {
                         .setId(id)
                         .setScheduleTask(scheduleTaskBuilder);
                 TaskRouter.Builder actionRouterBuilder = TaskRouter.newBuilder()
-                        .setSource(this.appId);
+                        .setSourceAppID(this.appId);
                 if (options != null && options.hasAppID()) {
                     String targetAppId = options.getAppID();
-                    actionRouterBuilder.setTarget(targetAppId);
+                    actionRouterBuilder.setTargetAppID(targetAppId);
                 }
                 
                 actionBuilder.setRouter(actionRouterBuilder.build());
@@ -874,7 +874,7 @@ final class TaskOrchestrationExecutor {
                         this.setInput(executionStarted.getInput().getValue());
                         this.setInstanceId(executionStarted.getOrchestrationInstance().getInstanceId());
                         this.logger.fine(() -> this.instanceId + ": Workflow execution started");
-                        this.appId = e.getRouter().getSource();
+                        this.appId = e.getRouter().getSourceAppID();
 
                         // Create and invoke the workflow orchestrator
                         TaskOrchestrationFactory factory = TaskOrchestrationExecutor.this.orchestrationFactories.get(executionStarted.getName());

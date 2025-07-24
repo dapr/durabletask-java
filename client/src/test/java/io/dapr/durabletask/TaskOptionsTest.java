@@ -25,7 +25,7 @@ public class TaskOptionsTest {
 
     @Test
     void taskOptionsWithAppID() {
-        TaskOptions options = new TaskOptions("app1");
+        TaskOptions options = TaskOptions.withAppID("app1");
         
         assertTrue(options.hasAppID());
         assertEquals("app1", options.getAppID());
@@ -36,7 +36,10 @@ public class TaskOptionsTest {
     @Test
     void taskOptionsWithRetryPolicyAndAppID() {
         RetryPolicy retryPolicy = new RetryPolicy(3, Duration.ofSeconds(1));
-        TaskOptions options = new TaskOptions(retryPolicy, null, "app2");
+        TaskOptions options = TaskOptions.builder()
+                .retryPolicy(retryPolicy)
+                .appID("app2")
+                .build();
         
         assertTrue(options.hasAppID());
         assertEquals("app2", options.getAppID());
@@ -53,7 +56,10 @@ public class TaskOptionsTest {
                 return context.getLastAttemptNumber() < 2;
             }
         };
-        TaskOptions options = new TaskOptions(null, retryHandler, "app3");
+        TaskOptions options = TaskOptions.builder()
+                .retryHandler(retryHandler)
+                .appID("app3")
+                .build();
         
         assertTrue(options.hasAppID());
         assertEquals("app3", options.getAppID());
@@ -64,7 +70,7 @@ public class TaskOptionsTest {
 
     @Test
     void taskOptionsWithoutAppID() {
-        TaskOptions options = new TaskOptions(null, null, null);
+        TaskOptions options = TaskOptions.create();
         
         assertFalse(options.hasAppID());
         assertNull(options.getAppID());
@@ -72,7 +78,7 @@ public class TaskOptionsTest {
 
     @Test
     void taskOptionsWithEmptyAppID() {
-        TaskOptions options = new TaskOptions("");
+        TaskOptions options = TaskOptions.withAppID("");
         
         assertFalse(options.hasAppID());
         assertEquals("", options.getAppID());
@@ -80,9 +86,60 @@ public class TaskOptionsTest {
 
     @Test
     void taskOptionsWithNullAppID() {
-        TaskOptions options = new TaskOptions(null, null, null);
+        TaskOptions options = TaskOptions.builder().appID(null).build();
         
         assertFalse(options.hasAppID());
         assertNull(options.getAppID());
+    }
+
+    @Test
+    void taskOptionsWithRetryPolicy() {
+        RetryPolicy retryPolicy = new RetryPolicy(5, Duration.ofMinutes(1));
+        TaskOptions options = TaskOptions.withRetryPolicy(retryPolicy);
+        
+        assertTrue(options.hasRetryPolicy());
+        assertEquals(retryPolicy, options.getRetryPolicy());
+        assertFalse(options.hasRetryHandler());
+        assertFalse(options.hasAppID());
+    }
+
+    @Test
+    void taskOptionsWithRetryHandler() {
+        RetryHandler retryHandler = new RetryHandler() {
+            @Override
+            public boolean handle(RetryContext context) {
+                return context.getLastAttemptNumber() < 3;
+            }
+        };
+        TaskOptions options = TaskOptions.withRetryHandler(retryHandler);
+        
+        assertTrue(options.hasRetryHandler());
+        assertEquals(retryHandler, options.getRetryHandler());
+        assertFalse(options.hasRetryPolicy());
+        assertFalse(options.hasAppID());
+    }
+
+    @Test
+    void taskOptionsWithBuilderChaining() {
+        RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(30));
+        RetryHandler retryHandler = new RetryHandler() {
+            @Override
+            public boolean handle(RetryContext context) {
+                return context.getLastAttemptNumber() < 1;
+            }
+        };
+        
+        TaskOptions options = TaskOptions.builder()
+                .retryPolicy(retryPolicy)
+                .retryHandler(retryHandler)
+                .appID("test-app")
+                .build();
+        
+        assertTrue(options.hasRetryPolicy());
+        assertEquals(retryPolicy, options.getRetryPolicy());
+        assertTrue(options.hasRetryHandler());
+        assertEquals(retryHandler, options.getRetryHandler());
+        assertTrue(options.hasAppID());
+        assertEquals("test-app", options.getAppID());
     }
 } 
