@@ -10,10 +10,10 @@ public final class TaskOptions {
     private final RetryHandler retryHandler;
     private final String appID;
 
-    private TaskOptions(Builder builder) {
-        this.retryPolicy = builder.retryPolicy;
-        this.retryHandler = builder.retryHandler;
-        this.appID = builder.appID;
+    private TaskOptions(RetryPolicy retryPolicy, RetryHandler retryHandler, String appID) {
+        this.retryPolicy = retryPolicy;
+        this.retryHandler = retryHandler;
+        this.appID = appID;
     }
 
     /**
@@ -142,7 +142,7 @@ public final class TaskOptions {
          * @return a new TaskOptions instance
          */
         public TaskOptions build() {
-            return new TaskOptions(this);
+            return new TaskOptions(this.retryPolicy, this.retryHandler, this.appID);
         }
     }
 }

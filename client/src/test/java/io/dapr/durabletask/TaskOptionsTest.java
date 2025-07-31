@@ -121,13 +121,8 @@ public class TaskOptionsTest {
 
     @Test
     void taskOptionsWithBuilderChaining() {
-        RetryPolicy retryPolicy = new RetryPolicy(2, Duration.ofSeconds(30));
-        RetryHandler retryHandler = new RetryHandler() {
-            @Override
-            public boolean handle(RetryContext context) {
-                return context.getLastAttemptNumber() < 1;
-            }
-        };
+        RetryPolicy retryPolicy = new RetryPolicy(3, Duration.ofSeconds(1));
+        RetryHandler retryHandler = context -> true;
         
         TaskOptions options = TaskOptions.builder()
                 .retryPolicy(retryPolicy)
@@ -135,6 +130,7 @@ public class TaskOptionsTest {
                 .appID("test-app")
                 .build();
         
+        assertNotNull(options);
         assertTrue(options.hasRetryPolicy());
         assertEquals(retryPolicy, options.getRetryPolicy());
         assertTrue(options.hasRetryHandler());

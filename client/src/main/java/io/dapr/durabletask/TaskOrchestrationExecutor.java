@@ -147,6 +147,10 @@ final class TaskOrchestrationExecutor {
             return this.appId;
         }
 
+        private void setAppId(String appId) {
+            this.appId = appId;
+        }
+
         @Override
         public Instant getCurrentInstant() {
             // TODO: Throw if instant is null
@@ -874,7 +878,7 @@ final class TaskOrchestrationExecutor {
                         this.setInput(executionStarted.getInput().getValue());
                         this.setInstanceId(executionStarted.getOrchestrationInstance().getInstanceId());
                         this.logger.fine(() -> this.instanceId + ": Workflow execution started");
-                        this.appId = e.getRouter().getSourceAppID();
+                        this.setAppId(e.getRouter().getSourceAppID());
 
                         // Create and invoke the workflow orchestrator
                         TaskOrchestrationFactory factory = TaskOrchestrationExecutor.this.orchestrationFactories.get(executionStarted.getName());
