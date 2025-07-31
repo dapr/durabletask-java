@@ -11,22 +11,20 @@ plugins {
 }
 
 group 'io.dapr'
-version = '1.5.7'
+version = '1.5.8'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.69.0'
 def protocVersion = '3.25.5'
 def jacksonVersion = '2.15.3'
-// When build on local, you need to set this value to your local jdk11 directory.
-// Java11 is used to compile and run all the tests.
-// Example for Windows:  C:/Program Files/Java/openjdk-11.0.12_7/
-def PATH_TO_TEST_JAVA_RUNTIME = System.env.JDK_11 ?: System.getProperty("java.home")
+// Java 11 is now the minimum required version for both compilation and testing
 
 dependencies {
 
     // https://github.com/grpc/grpc-java#download
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation 'com.google.protobuf:protobuf-java:3.25.5'
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
@@ -44,12 +42,12 @@ dependencies {
 
     // Netty dependencies for TLS
     implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation "io.netty:netty-handler:4.1.94.Final"
+    implementation 'io.netty:netty-handler:4.1.119.Final'
     implementation "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
 
     // Add Netty dependencies to test classpath
     testImplementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    testImplementation "io.netty:netty-handler:4.1.94.Final"
+    testImplementation 'io.netty:netty-handler:4.1.119.Final'
     testImplementation "io.netty:netty-tcnative-boringssl-static:2.0.59.Final"
 
     testImplementation 'org.bouncycastle:bcprov-jdk15on:1.70'
@@ -57,14 +55,12 @@ dependencies {
 }
 
 compileJava {
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }
 compileTestJava {
     sourceCompatibility = JavaVersion.VERSION_11
     targetCompatibility = JavaVersion.VERSION_11
-    options.fork = true
-    options.forkOptions.executable = "${PATH_TO_TEST_JAVA_RUNTIME}/bin/javac"
 }
 
 task downloadProtoFiles {
@@ -72,21 +68,33 @@ task downloadProtoFiles {
 
     doLast {
         def protoDir = file("${rootProject.projectDir}/internal/durabletask-protobuf/protos")
+        def protoFile = new File(protoDir, 'orchestrator_service.proto')
+        def commitHashFile = new File("${rootProject.projectDir}/internal/durabletask-protobuf/PROTO_SOURCE_COMMIT_HASH")
         protoDir.mkdirs()
 
         // Download the proto file
         new URL("https://raw.githubusercontent.com/dapr/durabletask-protobuf/${ext.branch}/protos/orchestrator_service.proto")
             .withInputStream { i -> 
-                new File(protoDir, 'orchestrator_service.proto').withOutputStream { it << i }
+                protoFile.withOutputStream { it << i }
             }
-
-        // Get and save the commit hash
-        def commitHashFile = new File("${rootProject.projectDir}/internal/durabletask-protobuf/PROTO_SOURCE_COMMIT_HASH")
-        def commitApiUrl = new URL("https://api.github.com/repos/dapr/durabletask-protobuf/commits?path=protos/orchestrator_service.proto&sha=${ext.branch}&per_page=1")
-        def connection = commitApiUrl.openConnection()
-        connection.setRequestProperty('Accept', 'application/vnd.github.v3+json')
-        def commitHash = new groovy.json.JsonSlurper().parse(connection.inputStream)[0].sha
-        commitHashFile.text = commitHash
+        
+        try {
+            def commitApiUrl = new URL("https://api.github.com/repos/dapr/durabletask-protobuf/commits?path=protos/orchestrator_service.proto&sha=${ext.branch}&per_page=1")
+            def connection = commitApiUrl.openConnection()
+            connection.setRequestProperty('Accept', 'application/vnd.github.v3+json')
+            connection.setRequestProperty('User-Agent', 'durabletask-java-build')
+            
+            // Add GitHub token if available (automatically provided in GitHub Actions)
+            if (System.env.GITHUB_TOKEN) {
+                connection.setRequestProperty('Authorization', "token ${System.env.GITHUB_TOKEN}")
+            }
+            
+            def commitHash = new groovy.json.JsonSlurper().parse(connection.inputStream)[0].sha
+            commitHashFile.text = commitHash
+            logger.info("Successfully updated proto commit hash: ${commitHash}")
+        } catch (Exception e) {
+            logger.error("Failed to fetch commit hash from GitHub API: ${e.message}")
+        }
     }
 }
 
@@ -113,10 +121,6 @@ sourceSets {
             srcDirs 'build/generated/source/proto/main/java'
         }
     }
-}
-
-tasks.withType(Test) {
-    executable = new File("${PATH_TO_TEST_JAVA_RUNTIME}", 'bin/java')
 }
 
 test {
@@ -206,6 +210,10 @@ publishing {
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+tasks.named('sourcesJar').configure {
+    dependsOn tasks.named('generateProto')
 }
 
 spotbugs {
