@@ -47,7 +47,7 @@ azurefunctions {
     region = 'westus'
     runtime {
         os = 'Windows'
-        javaVersion = 'Java 8'
+        javaVersion = 'Java 11'
     }
     auth {
         type = 'azure_cli'
