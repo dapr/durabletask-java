@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
+import io.opentelemetry.context.Context;
 import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.concurrent.TimeoutException;
@@ -38,7 +39,7 @@ public abstract class DurableTaskClient implements AutoCloseable {
      * @return the randomly-generated instance ID of the scheduled orchestration instance
      */
     public String scheduleNewOrchestrationInstance(String orchestratorName) {
-        return this.scheduleNewOrchestrationInstance(orchestratorName, null, null);
+        return this.scheduleNewOrchestrationInstance(orchestratorName, null, null, null);
     }
 
     /**
@@ -66,6 +67,19 @@ public abstract class DurableTaskClient implements AutoCloseable {
                 .setInstanceId(instanceId);
         return this.scheduleNewOrchestrationInstance(orchestratorName, options);
     }
+
+    public String scheduleNewOrchestrationInstance(
+            String orchestratorName,
+            Object input, String instanceId, Context context){
+        NewOrchestrationInstanceOptions options = new NewOrchestrationInstanceOptions()
+                .setInput(input)
+                .setInstanceId(instanceId);
+        return this.scheduleNewOrchestrationInstance(orchestratorName, options, context);
+    }
+
+    public abstract String scheduleNewOrchestrationInstance(
+            String orchestratorName,
+            NewOrchestrationInstanceOptions options, Context context);
 
     /**
      * Schedules a new orchestration instance with a specified set of options for execution.
@@ -97,6 +111,24 @@ public abstract class DurableTaskClient implements AutoCloseable {
     public void raiseEvent(String instanceId, String eventName) {
         this.raiseEvent(instanceId, eventName, null);
     }
+
+    /**
+     * Sends an event notification message to a waiting orchestration instance.
+     * <p>
+     * In order to handle the event, the target orchestration instance must be waiting for an event named
+     * <code>eventName</code> using the {@link TaskOrchestrationContext#waitForExternalEvent(String)} method.
+     * If the target orchestration instance is not yet waiting for an event named <code>eventName</code>,
+     * then the event will be saved in the orchestration instance state and dispatched immediately when the
+     * orchestrator calls {@link TaskOrchestrationContext#waitForExternalEvent(String)}. This event saving occurs even
+     * if the orchestrator has canceled its wait operation before the event was received.
+     * <p>
+     * Raised events for a completed or non-existent orchestration instance will be silently discarded.
+     *
+     * @param instanceId the ID of the orchestration instance that will handle the event
+     * @param eventName the case-insensitive name of the event
+     * @param context Otel context for trace propagation.
+     */
+    public abstract void raiseEvent(String instanceId, String eventName, @Nullable Object eventPayload, Context context);
 
     /**
      * Sends an event notification message with a payload to a waiting orchestration instance.
