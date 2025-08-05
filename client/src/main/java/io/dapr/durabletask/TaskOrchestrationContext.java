@@ -37,6 +37,13 @@ public interface TaskOrchestrationContext {
     String getInstanceId();
 
     /**
+     * Gets the app ID of the current orchestration instance, if available.
+     * This is used for cross-app workflow routing.
+     * @return the app ID of the current orchestration instance, or null if not available
+     */
+    String getAppId();
+
+    /**
      * Gets the current orchestration time in UTC.
      * @return the current orchestration time in UTC
      */

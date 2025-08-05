@@ -1,9 +1,14 @@
 # Durable Task Client SDK for Java
 
-[![Build](https://github.com/microsoft/durabletask-java/actions/workflows/build-validation.yml/badge.svg)](https://github.com/microsoft/durabletask-java/actions/workflows/build-validation.yml)
+[![Build](https://github.com/dapr/durabletask-java/actions/workflows/build-validation.yml/badge.svg)](https://github.com/dapr/durabletask-java/actions/workflows/build-validation.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 This repo contains the Java SDK for the Durable Task Framework as well as classes and annotations to support running [Azure Durable Functions](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-overview?tabs=java) for Java. With this SDK, you can define, schedule, and manage durable orchestrations using ordinary Java code.
+
+## Requirements
+
+- **Java 11 or higher** - This SDK requires Java 11 as the minimum version
+- **Gradle** - The project uses [Gradle 7.6.4](gradle/wrapper/gradle-wrapper.properties)
 
 ### Simple, fault-tolerant sequences
 
@@ -78,8 +83,7 @@ The following packages are produced from this repo.
 
 | Package | Latest version |
 | - | - |
-| Durable Task - Client | [![Maven Central](https://img.shields.io/maven-central/v/com.microsoft/durabletask-client?label=durabletask-client)](https://mvnrepository.com/artifact/com.microsoft/durabletask-client/1.0.0) |
-| Durable Task - Azure Functions | [![Maven Central](https://img.shields.io/maven-central/v/com.microsoft/durabletask-azure-functions?label=durabletask-azure-functions)](https://mvnrepository.com/artifact/com.microsoft/durabletask-azure-functions/1.0.1) |
+| Durable Task - Client | [![Maven Central](https://img.shields.io/maven-central/v/io.dapr/durabletask-client?label=durabletask-client)](https://mvnrepository.com/artifact/io.dapr/durabletask-client/1.5.7) |
 
 ## Getting started with Azure Functions
 
