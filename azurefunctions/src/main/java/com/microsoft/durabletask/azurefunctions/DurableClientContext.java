@@ -7,10 +7,10 @@ import com.microsoft.azure.functions.HttpRequestMessage;
 import com.microsoft.azure.functions.HttpResponseMessage;
 
 import com.microsoft.azure.functions.HttpStatus;
-import com.microsoft.durabletask.DurableTaskClient;
-import com.microsoft.durabletask.DurableTaskGrpcClientBuilder;
-import com.microsoft.durabletask.OrchestrationMetadata;
-import com.microsoft.durabletask.OrchestrationRuntimeStatus;
+import io.dapr.durabletask.DurableTaskClient;
+import io.dapr.durabletask.DurableTaskGrpcClientBuilder;
+import io.dapr.durabletask.OrchestrationMetadata;
+import io.dapr.durabletask.OrchestrationRuntimeStatus;
 
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;

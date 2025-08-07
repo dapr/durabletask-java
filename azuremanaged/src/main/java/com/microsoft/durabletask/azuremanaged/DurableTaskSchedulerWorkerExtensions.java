@@ -4,7 +4,7 @@
 package com.microsoft.durabletask.azuremanaged;
 
 import com.azure.core.credential.TokenCredential;
-import com.microsoft.durabletask.DurableTaskGrpcWorkerBuilder;
+import io.dapr.durabletask.DurableTaskGrpcWorkerBuilder;
 
 import io.grpc.Channel;
 import java.util.Objects;

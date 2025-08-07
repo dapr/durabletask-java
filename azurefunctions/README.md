@@ -79,7 +79,7 @@ import java.util.Optional;
 import com.microsoft.azure.functions.*;
 import com.microsoft.azure.functions.annotation.*;
 
-import com.microsoft.durabletask.*;
+import io.dapr.durabletask.*;
 import com.microsoft.durabletask.azurefunctions.*;
 
 public class DurableFunctionsSample {

@@ -9,12 +9,12 @@ package com.microsoft.durabletask.azurefunctions.internal.middleware;
 import com.microsoft.azure.functions.internal.spi.middleware.Middleware;
 import com.microsoft.azure.functions.internal.spi.middleware.MiddlewareChain;
 import com.microsoft.azure.functions.internal.spi.middleware.MiddlewareContext;
-import com.microsoft.durabletask.CompositeTaskFailedException;
-import com.microsoft.durabletask.DataConverter;
-import com.microsoft.durabletask.OrchestrationRunner;
-import com.microsoft.durabletask.TaskFailedException;
-import com.microsoft.durabletask.interruption.ContinueAsNewInterruption;
-import com.microsoft.durabletask.interruption.OrchestratorBlockedException;
+import io.dapr.durabletask.CompositeTaskFailedException;
+import io.dapr.durabletask.DataConverter;
+import io.dapr.durabletask.OrchestrationRunner;
+import io.dapr.durabletask.TaskFailedException;
+import io.dapr.durabletask.interruption.ContinueAsNewInterruption;
+import io.dapr.durabletask.interruption.OrchestratorBlockedException;
 
 /**
  * Durable Function Orchestration Middleware

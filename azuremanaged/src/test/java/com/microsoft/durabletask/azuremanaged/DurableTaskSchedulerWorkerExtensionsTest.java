@@ -1,7 +1,7 @@
 package com.microsoft.durabletask.azuremanaged;
 
 import com.azure.core.credential.TokenCredential;
-import com.microsoft.durabletask.DurableTaskGrpcWorkerBuilder;
+import io.dapr.durabletask.DurableTaskGrpcWorkerBuilder;
 import io.grpc.Channel;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
