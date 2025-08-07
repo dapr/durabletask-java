@@ -1,8 +1,8 @@
 package com.microsoft.durabletask.azuremanaged;
 
-import com.microsoft.durabletask.DurableTaskClient;
-import com.microsoft.durabletask.DurableTaskGrpcClientBuilder;
-import com.microsoft.durabletask.NewOrchestrationInstanceOptions;
+import io.dapr.durabletask.DurableTaskClient;
+import io.dapr.durabletask.DurableTaskGrpcClientBuilder;
+import io.dapr.durabletask.NewOrchestrationInstanceOptions;
 import io.grpc.*;
 import io.grpc.stub.ServerCalls;
 import io.grpc.stub.StreamObserver;
