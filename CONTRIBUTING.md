@@ -42,7 +42,7 @@ When updating the protobuf definitions in `internal/durabletask-protobuf/protos/
 ./gradlew publishToMavenLocal
 ```
 
-or simply `./gradlew build publishToMavenLocal`
+or simply `./gradlew build publishToMavenLocal -PskipSigning`
 
 Check if it was released locally with:
 ```shell

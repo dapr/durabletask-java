@@ -292,13 +292,15 @@ final class TaskOrchestrationExecutor {
             // Add target app ID if specified in options
             if (options != null && options.hasAppID()) {
                 String targetAppId = options.getAppID();
-                routerBuilder.setTargetAppID(targetAppId);
+                TaskRouter router = TaskRouter.newBuilder()
+                    .setSourceAppID(this.appId)
+                    .setTargetAppID(targetAppId)
+                    .build();
+                scheduleTaskBuilder.setRouter(router);
                 this.logger.fine(() -> String.format(
-                "cross app routing detected: source=%s, target=%s",
-                this.appId, targetAppId));
-        }
-            TaskRouter router = routerBuilder.build();
-            scheduleTaskBuilder.setRouter(router);
+                    "cross app routing detected: source=%s, target=%s",
+                    this.appId, targetAppId));
+            }
             TaskFactory<V> taskFactory = () -> {
                 int id = this.sequenceNumber++;
                 
@@ -306,14 +308,16 @@ final class TaskOrchestrationExecutor {
                 OrchestratorAction.Builder actionBuilder = OrchestratorAction.newBuilder()
                         .setId(id)
                         .setScheduleTask(scheduleTaskBuilder);
-                TaskRouter.Builder actionRouterBuilder = TaskRouter.newBuilder()
-                        .setSourceAppID(this.appId);
+                
                 if (options != null && options.hasAppID()) {
                     String targetAppId = options.getAppID();
-                    actionRouterBuilder.setTargetAppID(targetAppId);
+                    TaskRouter actionRouter = TaskRouter.newBuilder()
+                        .setSourceAppID(this.appId)
+                        .setTargetAppID(targetAppId)
+                        .build();
+                    actionBuilder.setRouter(actionRouter);
                 }
                 
-                actionBuilder.setRouter(actionRouterBuilder.build());
                 this.pendingActions.put(id, actionBuilder.build());
 
                 if (!this.isReplaying) {

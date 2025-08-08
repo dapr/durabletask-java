@@ -3,7 +3,7 @@
 
 package com.microsoft.durabletask.azuremanaged;
 
-import com.microsoft.durabletask.DurableTaskGrpcClientBuilder;
+import io.dapr.durabletask.DurableTaskGrpcClientBuilder;
 import com.azure.core.credential.TokenCredential;
 import io.grpc.Channel;
 import java.util.Objects;

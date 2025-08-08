@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 package io.durabletask.samples;
 
-import com.microsoft.durabletask.*;
+import io.dapr.durabletask.*;
 
 import java.io.IOException;
 import java.time.Duration;

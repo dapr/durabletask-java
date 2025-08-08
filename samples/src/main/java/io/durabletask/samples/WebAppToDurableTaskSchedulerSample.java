@@ -2,7 +2,7 @@
 // Licensed under the MIT License.
 package io.durabletask.samples;
 
-import com.microsoft.durabletask.*;
+import io.dapr.durabletask.*;
 import com.microsoft.durabletask.azuremanaged.DurableTaskSchedulerClientExtensions;
 import com.microsoft.durabletask.azuremanaged.DurableTaskSchedulerWorkerExtensions;
 import org.springframework.boot.SpringApplication;
