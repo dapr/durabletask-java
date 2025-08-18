@@ -17,7 +17,17 @@ archivesBaseName = 'durabletask-client'
 def grpcVersion = '1.69.0'
 def protocVersion = '3.25.5'
 def jacksonVersion = '2.15.3'
+
+def otelVersion = '1.51.0'
+def micrometerVersion = '1.5.1'
+
+// When build on local, you need to set this value to your local jdk11 directory.
+// Java11 is used to compile and run all the tests.
+// Example for Windows:  C:/Program Files/Java/openjdk-11.0.12_7/
+def PATH_TO_TEST_JAVA_RUNTIME = System.env.JDK_11 ?: System.getProperty("java.home")
+
 // Java 11 is now the minimum required version for both compilation and testing
+
 
 dependencies {
 
@@ -26,6 +36,9 @@ dependencies {
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation 'com.google.protobuf:protobuf-java:3.25.5'
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
+    implementation "io.opentelemetry:opentelemetry-api:${otelVersion}"
+    implementation "io.opentelemetry:opentelemetry-context:${otelVersion}"
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
 

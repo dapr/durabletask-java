@@ -9,8 +9,14 @@ import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
 import io.dapr.durabletask.implementation.protobuf.OrchestratorService.WorkItem.RequestCase;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
 
+
+import io.dapr.durabletask.interceptors.DaprWorkflowClientGrpcInterceptors;
 import io.grpc.*;
 
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.ContextKey;
+
+import javax.annotation.Nullable;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -18,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 /**
  * Task hub worker that connects to a sidecar process over gRPC to execute
@@ -42,6 +49,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
     private final boolean isExecutorServiceManaged;
     private volatile boolean isNormalShutdown = false;
     private Thread workerThread;
+    private DaprWorkflowClientGrpcInterceptors interceptors;
 
     DurableTaskGrpcWorker(DurableTaskGrpcWorkerBuilder builder) {
         this.orchestrationFactories.putAll(builder.orchestrationFactories);
@@ -69,10 +77,11 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         }
 
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
+        this.interceptors = builder.interceptors;
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
         this.maximumTimerInterval = builder.maximumTimerInterval != null ? builder.maximumTimerInterval
                 : DEFAULT_MAXIMUM_TIMER_INTERVAL;
-        this.workerPool = builder.executorService != null ? builder.executorService : Executors.newCachedThreadPool();
+        this.workerPool = Context.taskWrapping(builder.executorService != null ? builder.executorService : Executors.newCachedThreadPool());
         this.isExecutorServiceManaged = builder.executorService == null;
     }
 
@@ -140,7 +149,7 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
         while (true) {
             try {
                 GetWorkItemsRequest getWorkItemsRequest = GetWorkItemsRequest.newBuilder().build();
-                Iterator<WorkItem> workItemStream = this.sidecarClient.getWorkItems(getWorkItemsRequest);
+                Iterator<WorkItem> workItemStream = interceptors.intercept(this.sidecarClient, Context.root()).getWorkItems(getWorkItemsRequest);
                 while (workItemStream.hasNext()) {
                     WorkItem workItem = workItemStream.next();
                     RequestCase requestType = workItem.getRequestCase();
@@ -164,10 +173,13 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                     .build();
 
                             try {
+                                interceptors.intercept(this.sidecarClient, Context.root()).completeOrchestratorTask(response);
+
                                 this.sidecarClient.completeOrchestratorTask(response);
                                 logger.log(Level.FINEST,
                                         "Completed orchestrator request for instance: {0}",
                                     orchestratorRequest.getInstanceId());
+
                             } catch (StatusRuntimeException e) {
                                 if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
                                     logger.log(Level.WARNING,
@@ -191,7 +203,9 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                     activityRequest.getName(),
                                     activityRequest.getOrchestrationInstance().getInstanceId()));
 
+
                         // TODO: Error handling
+
                         this.workerPool.submit(() -> {
                             String output = null;
                             TaskFailureDetails failureDetails = null;
@@ -200,7 +214,8 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                                         activityRequest.getName(),
                                         activityRequest.getInput().getValue(),
                                         activityRequest.getTaskExecutionId(),
-                                        activityRequest.getTaskId());
+                                        activityRequest.getTaskId(),
+                                        activityRequest.getParentTraceId());
                             } catch (Throwable e) {
                                 failureDetails = TaskFailureDetails.newBuilder()
                                         .setErrorType(e.getClass().getName())
@@ -223,7 +238,11 @@ public final class DurableTaskGrpcWorker implements AutoCloseable {
                             }
 
                             try {
-                                this.sidecarClient.completeActivityTask(responseBuilder.build());
+                                System.out.println(activityRequest);
+
+
+                                Context activityContext = Context.current().with(ContextKey.named("traceparent"), activityRequest.getParentTraceContext().getTraceParent());
+                                interceptors.intercept(this.sidecarClient, activityContext).completeActivityTask(responseBuilder.build());
                             } catch (StatusRuntimeException e) {
                                 if (e.getStatus().getCode() == Status.Code.UNAVAILABLE) {
                                     logger.log(Level.WARNING,
