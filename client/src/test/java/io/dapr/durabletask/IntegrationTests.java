@@ -87,8 +87,14 @@ public class IntegrationTests extends IntegrationTestBase {
     void singleTimer() throws IOException, TimeoutException {
         final String orchestratorName = "SingleTimer";
         final Duration delay = Duration.ofSeconds(3);
+        AtomicReferenceArray<LocalDateTime> timestamps = new AtomicReferenceArray<>(2);
+        AtomicInteger counter = new AtomicInteger();
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
-            .addOrchestrator(orchestratorName, ctx -> ctx.createTimer(delay).await())
+            .addOrchestrator(orchestratorName, ctx -> {
+                timestamps.set(counter.get(), LocalDateTime.now());
+                counter.incrementAndGet();
+                ctx.createTimer(delay).await();
+            })
             .buildAndStart();
 
         DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
@@ -103,11 +109,22 @@ public class IntegrationTests extends IntegrationTestBase {
             long expectedCompletionSecond = instance.getCreatedAt().plus(delay).getEpochSecond();
             long actualCompletionSecond = instance.getLastUpdatedAt().getEpochSecond();
             assertTrue(expectedCompletionSecond <= actualCompletionSecond);
+
+            // Verify that the correct number of timers were created
+            // This should yield 2 (first invocation + replay invocations for internal timers)
+            assertEquals(2, counter.get());
+
+            // Verify that each timer is the expected length
+            int[] secondsElapsed = new int[1];
+            for (int i = 0; i < timestamps.length() - 1; i++) {
+                secondsElapsed[i] = timestamps.get(i + 1).getSecond() - timestamps.get(i).getSecond();
+            }
+            assertEquals(secondsElapsed[0], 3);
+
         }
     }
 
     @Test
-    @Disabled("Test is disabled for investigation, fixing the test retry pattern exposed the failure (could be timer creation issue)")
     void longTimer() throws TimeoutException {
         final String orchestratorName = "LongTimer";
         final Duration delay = Duration.ofSeconds(7);
@@ -263,6 +280,31 @@ public class IntegrationTests extends IntegrationTestBase {
 
     @Test
     void singleTimeStampTimer() throws IOException, TimeoutException {
+        final String orchestratorName = "SingleTimeStampTimer";
+        final Duration delay = Duration.ofSeconds(3);
+        final ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.now().plusSeconds(delay.getSeconds()), ZoneId.systemDefault());
+        DurableTaskGrpcWorker worker = this.createWorkerBuilder()
+                .addOrchestrator(orchestratorName, ctx -> ctx.createTimer(zonedDateTime).await())
+                .buildAndStart();
+
+        DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
+        try (worker; client) {
+            String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName);
+            Duration timeout = delay.plus(defaultTimeout);
+            OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, timeout, false);
+            assertNotNull(instance);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus());
+
+            // Verify that the delay actually happened
+            long expectedCompletionSecond = zonedDateTime.toInstant().getEpochSecond();
+            long actualCompletionSecond = instance.getLastUpdatedAt().getEpochSecond();
+            assertTrue(expectedCompletionSecond <= actualCompletionSecond);
+        }
+    }
+
+
+    @Test
+    void singleTimeStampCreateTimer() throws IOException, TimeoutException {
         final String orchestratorName = "SingleTimeStampTimer";
         final Duration delay = Duration.ofSeconds(3);
         final ZonedDateTime zonedDateTime = ZonedDateTime.of(LocalDateTime.now().plusSeconds(delay.getSeconds()), ZoneId.systemDefault());

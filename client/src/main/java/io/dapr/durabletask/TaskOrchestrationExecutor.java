@@ -1038,7 +1038,7 @@ final class TaskOrchestrationExecutor {
             // if necessary. Otherwise, we return and no more sub-timers are created.
             private CompletableFuture<Void> createTimerChain(Instant finalFireAt, CompletableFuture<Void> currentFuture) {
                 return currentFuture.thenRun(() -> {
-                    if (currentInstant.compareTo(finalFireAt) > 0) {
+                    if (currentInstant.compareTo(finalFireAt) >= 0) {
                         return;
                     }
                     Task<Void> nextTimer = createTimerTask(finalFireAt);
