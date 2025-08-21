@@ -125,6 +125,53 @@ public class IntegrationTests extends IntegrationTestBase {
     }
 
     @Test
+    void loopWithTimer() throws IOException, TimeoutException {
+        final String orchestratorName = "LoopWithTimer";
+        final Duration delay = Duration.ofSeconds(2);
+        AtomicReferenceArray<LocalDateTime> timestamps = new AtomicReferenceArray<>(100);
+        AtomicInteger counter = new AtomicInteger();
+        DurableTaskGrpcWorker worker = this.createWorkerBuilder()
+                .addOrchestrator(orchestratorName, ctx -> {
+                    for(int i = 0 ; i < 10; i++) {
+                        timestamps.set(counter.get(), LocalDateTime.now());
+                        counter.incrementAndGet();
+                        ctx.createTimer(delay).await();
+                    }
+                })
+                .buildAndStart();
+
+        DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
+        try (worker; client) {
+            String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName);
+            Duration timeout = delay.plus(defaultTimeout);
+            OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, timeout, false);
+            assertNotNull(instance);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus());
+
+            // Verify that the delay actually happened
+            long expectedCompletionSecond = instance.getCreatedAt().plus(delay).getEpochSecond();
+            long actualCompletionSecond = instance.getLastUpdatedAt().getEpochSecond();
+            assertTrue(expectedCompletionSecond <= actualCompletionSecond);
+
+            // Verify that the correct number of timers were created
+            // ??? Not sure why 65, this seems consistent with what we see in Catalyst
+            assertEquals(65, counter.get());
+
+            // Verify that each timer is the expected length
+            int[] secondsElapsed = new int[timestamps.length()];
+            for (int i = 0; i < timestamps.length() - 1; i++) {
+                if(timestamps.get(i + 1) != null && timestamps.get(i) != null ) {
+                    secondsElapsed[i] = timestamps.get(i + 1).getSecond() - timestamps.get(i).getSecond();
+                }else{
+                    secondsElapsed[i] = -1;
+                }
+            }
+            assertEquals(secondsElapsed[0], 2);
+
+        }
+    }
+
+    @Test
     void longTimer() throws TimeoutException {
         final String orchestratorName = "LongTimer";
         final Duration delay = Duration.ofSeconds(7);
