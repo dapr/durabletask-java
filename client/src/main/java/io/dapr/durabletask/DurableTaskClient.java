@@ -4,7 +4,6 @@ package io.dapr.durabletask;
 
 import javax.annotation.Nullable;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -63,7 +62,6 @@ public abstract class DurableTaskClient implements AutoCloseable {
      */
     public String scheduleNewOrchestrationInstance(String orchestratorName, Object input, String instanceId) {
         NewOrchestrationInstanceOptions options = new NewOrchestrationInstanceOptions()
-                .setStartTime(Instant.now())
                 .setInput(input)
                 .setInstanceId(instanceId);
         return this.scheduleNewOrchestrationInstance(orchestratorName, options);

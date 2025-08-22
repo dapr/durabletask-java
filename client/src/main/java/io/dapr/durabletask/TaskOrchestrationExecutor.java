@@ -14,6 +14,7 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalField;
 import java.util.*;
 import java.util.concurrent.CancellationException;
@@ -91,9 +92,9 @@ final class TaskOrchestrationExecutor {
 
         // LinkedHashMap to maintain insertion order when returning the list of pending actions
         private final Map<Integer, OrchestratorAction> pendingActions = new LinkedHashMap<>();
-        private final Map<Integer, TaskRecord<?>> openTasks = new ConcurrentHashMap<>();
+        private final Map<Integer, TaskRecord<?>> openTasks = new HashMap<>();
         private final Map<String, Queue<TaskRecord<?>>> outstandingEvents = new LinkedHashMap<>();
-        private final List<HistoryEvent> unprocessedEvents = Collections.synchronizedList(new LinkedList<>());
+        private final List<HistoryEvent> unprocessedEvents = new LinkedList<>();
         private final Queue<HistoryEvent> eventsWhileSuspended = new ArrayDeque<>();
         private final DataConverter dataConverter = TaskOrchestrationExecutor.this.dataConverter;
         private final Duration maximumTimerInterval = TaskOrchestrationExecutor.this.maximumTimerInterval;
@@ -305,12 +306,10 @@ final class TaskOrchestrationExecutor {
             }
             TaskFactory<V> taskFactory = () -> {
                 int id = this.sequenceNumber++;
-
                 ScheduleTaskAction scheduleTaskAction = scheduleTaskBuilder.build();
                 OrchestratorAction.Builder actionBuilder = OrchestratorAction.newBuilder()
                         .setId(id)
                         .setScheduleTask(scheduleTaskBuilder);
-
                 if (options != null && options.hasAppID()) {
                     String targetAppId = options.getAppID();
                     TaskRouter actionRouter = TaskRouter.newBuilder()
@@ -319,7 +318,6 @@ final class TaskOrchestrationExecutor {
                         .build();
                     actionBuilder.setRouter(actionRouter);
                 }
-
                 this.pendingActions.put(id, actionBuilder.build());
 
                 if (!this.isReplaying) {
@@ -650,7 +648,6 @@ final class TaskOrchestrationExecutor {
         }
 
         private Task<Void> createTimer(Instant finalFireAt) {
-            logger.info(">>>> Creating a Timer Task to fire at: "+ finalFireAt);
             return new TimerTask(finalFireAt);
         }
 
@@ -662,10 +659,8 @@ final class TaskOrchestrationExecutor {
                     .build());
 
             if (!this.isReplaying) {
-                logger.info("Creating Instant Timer with id: " + id + " fireAt: " + fireAt);
+                logger.finer("Creating Instant Timer with id: " + id + " fireAt: " + fireAt);
             }
-
-            logger.info("REPLAY: Creating Instant Timer with id: " + id + " fireAt: " + fireAt);
 
             CompletableTask<Void> timerTask = new CompletableTask<>();
             TaskRecord<Void> record = new TaskRecord<>(timerTask, "(timer)", Void.class);
@@ -706,9 +701,8 @@ final class TaskOrchestrationExecutor {
 
             if (!this.isReplaying) {
                 // TODO: Log timer fired, including the scheduled fire-time
-                this.logger.info("Firing timer by completing task: "+timerEventId+" expected fire at time: "+ Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(), timerFiredEvent.getFireAt().getNanos()));
+                this.logger.finer("Firing timer by completing task: "+timerEventId+" expected fire at time: "+ Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(), timerFiredEvent.getFireAt().getNanos()));
             }
-            this.logger.info("REPLAY: Firing timer by completing task: "+timerEventId+" expected fire at time: "+ Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(), timerFiredEvent.getFireAt().getNanos()));
 
             CompletableTask<?> task = record.getTask();
             task.complete(null);
@@ -1031,7 +1025,6 @@ final class TaskOrchestrationExecutor {
 
             public TimerTask(Instant finalFireAt) {
                 super();
-                logger.info("Creating a Timer task at: " + finalFireAt + " -> with current time " + currentInstant );
                 CompletableTask<Void> firstTimer = createTimerTask(finalFireAt);
                 CompletableFuture<Void> timerChain = createTimerChain(finalFireAt, firstTimer.future);
                 this.task = new CompletableTask<>(timerChain);
@@ -1045,11 +1038,12 @@ final class TaskOrchestrationExecutor {
             // if necessary. Otherwise, we return and no more sub-timers are created.
             private CompletableFuture<Void> createTimerChain(Instant finalFireAt, CompletableFuture<Void> currentFuture) {
                 return currentFuture.thenRun(() -> {
-                    if (currentInstant.compareTo(finalFireAt) >= 0) {
+                    Instant currentInstsanceMinusNanos = currentInstant.minusNanos(currentInstant.getNano());
+                    Instant finalFireAtMinusNanos = finalFireAt.minusNanos(finalFireAt.getNano());
+                    if (currentInstsanceMinusNanos.compareTo(finalFireAtMinusNanos) >= 0) {
                         return;
                     }
                     Task<Void> nextTimer = createTimerTask(finalFireAt);
-
                     createTimerChain(finalFireAt, nextTimer.future);
                 });
             }
@@ -1069,10 +1063,9 @@ final class TaskOrchestrationExecutor {
 
             private void handleSubTimerSuccess() {
                 // check if it is the last timer
-                logger.info(">>>> Comparing current instant "+ currentInstant+" with finalFireAt: " + finalFireAt);
-                logger.info(">>>>Comparison: "+currentInstant.compareTo(finalFireAt));
-                if (currentInstant.compareTo(finalFireAt) >= 0) {
-                    logger.info(">>>> Comparison -> Complete");
+                Instant currentInstantMinusNanos = currentInstant.minusNanos(currentInstant.getNano());
+                Instant finalFireAtMinusNanos = finalFireAt.minusNanos(finalFireAt.getNano());
+                if (currentInstantMinusNanos.compareTo(finalFireAtMinusNanos) >= 0) {
                     this.complete(null);
                 }
             }

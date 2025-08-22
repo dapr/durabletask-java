@@ -119,22 +119,25 @@ public class IntegrationTests extends IntegrationTestBase {
             for (int i = 0; i < timestamps.length() - 1; i++) {
                 secondsElapsed[i] = timestamps.get(i + 1).getSecond() - timestamps.get(i).getSecond();
             }
-            assertEquals(secondsElapsed[0], 3);
+            assertEquals(3, secondsElapsed[0]);
 
         }
     }
+
 
     @Test
     void loopWithTimer() throws IOException, TimeoutException {
         final String orchestratorName = "LoopWithTimer";
         final Duration delay = Duration.ofSeconds(2);
-        AtomicReferenceArray<LocalDateTime> timestamps = new AtomicReferenceArray<>(100);
+        AtomicReferenceArray<LocalDateTime> timestamps = new AtomicReferenceArray<>(4);
         AtomicInteger counter = new AtomicInteger();
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
                 .addOrchestrator(orchestratorName, ctx -> {
-                    for(int i = 0 ; i < 10; i++) {
-                        timestamps.set(counter.get(), LocalDateTime.now());
-                        counter.incrementAndGet();
+                    for(int i = 0 ; i < 3; i++) {
+                        if(!ctx.getIsReplaying()) {
+                            timestamps.set(counter.get(), LocalDateTime.now());
+                            counter.incrementAndGet();
+                        }
                         ctx.createTimer(delay).await();
                     }
                 })
@@ -154,8 +157,7 @@ public class IntegrationTests extends IntegrationTestBase {
             assertTrue(expectedCompletionSecond <= actualCompletionSecond);
 
             // Verify that the correct number of timers were created
-            // ??? Not sure why 65, this seems consistent with what we see in Catalyst
-            assertEquals(65, counter.get());
+            assertEquals(3, counter.get());
 
             // Verify that each timer is the expected length
             int[] secondsElapsed = new int[timestamps.length()];
@@ -166,7 +168,66 @@ public class IntegrationTests extends IntegrationTestBase {
                     secondsElapsed[i] = -1;
                 }
             }
-            assertEquals(secondsElapsed[0], 2);
+            assertEquals(2, secondsElapsed[0]);
+            assertEquals(2, secondsElapsed[1]);
+            assertEquals(-1, secondsElapsed[2]);
+
+
+        }
+    }
+
+    @Test
+    void loopWithWaitForEvent() throws IOException, TimeoutException {
+        final String orchestratorName = "LoopWithTimer";
+        final Duration delay = Duration.ofSeconds(2);
+        AtomicReferenceArray<LocalDateTime> timestamps = new AtomicReferenceArray<>(4);
+        AtomicInteger counter = new AtomicInteger();
+        DurableTaskGrpcWorker worker = this.createWorkerBuilder()
+                .addOrchestrator(orchestratorName, ctx -> {
+                    for(int i = 0 ; i < 4; i++) {
+                        try{
+                            ctx.waitForExternalEvent("HELLO", delay).await();
+                        }catch(TaskCanceledException tce ){
+                            if(!ctx.getIsReplaying()){
+                                timestamps.set(counter.get(), LocalDateTime.now());
+                                counter.incrementAndGet();
+                           }
+
+                        }
+                    }
+                })
+                .buildAndStart();
+
+        DurableTaskClient client = new DurableTaskGrpcClientBuilder().build();
+        try (worker; client) {
+            String instanceId = client.scheduleNewOrchestrationInstance(orchestratorName);
+            Duration timeout = delay.plus(defaultTimeout);
+            OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, timeout, false);
+            assertNotNull(instance);
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus());
+
+            // Verify that the delay actually happened
+            long expectedCompletionSecond = instance.getCreatedAt().plus(delay).getEpochSecond();
+            long actualCompletionSecond = instance.getLastUpdatedAt().getEpochSecond();
+            assertTrue(expectedCompletionSecond <= actualCompletionSecond);
+
+            // Verify that the correct number of timers were created
+            assertEquals(4, counter.get());
+
+            // Verify that each timer is the expected length
+            int[] secondsElapsed = new int[timestamps.length()];
+            for (int i = 0; i < timestamps.length() - 1; i++) {
+                if(timestamps.get(i + 1) != null && timestamps.get(i) != null ) {
+                    secondsElapsed[i] = timestamps.get(i + 1).getSecond() - timestamps.get(i).getSecond();
+                }else{
+                    secondsElapsed[i] = -1;
+                }
+            }
+            assertEquals(2, secondsElapsed[0]);
+            assertEquals(2, secondsElapsed[1]);
+            assertEquals(2, secondsElapsed[2]);
+            assertEquals(0, secondsElapsed[3]);
+
 
         }
     }
@@ -192,7 +253,7 @@ public class IntegrationTests extends IntegrationTestBase {
             Duration timeout = delay.plus(defaultTimeout);
             OrchestrationMetadata instance = client.waitForInstanceCompletion(instanceId, timeout, false);
             assertNotNull(instance);
-            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus(), 
+            assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus(),
                 String.format("Orchestration failed with error: %s", instance.getFailureDetails().getErrorMessage()));
 
             // Verify that the delay actually happened
@@ -973,13 +1034,13 @@ public class IntegrationTests extends IntegrationTestBase {
             // Test CreatedTimeTo filter
             query.setCreatedTimeTo(startTime.minus(Duration.ofSeconds(1)));
             result = client.queryInstances(query);
-            assertTrue(result.getOrchestrationState().isEmpty(), 
-                "Result should be empty but found " + result.getOrchestrationState().size() + " instances: " + 
+            assertTrue(result.getOrchestrationState().isEmpty(),
+                "Result should be empty but found " + result.getOrchestrationState().size() + " instances: " +
                 "Start time: " + startTime + ", " +
                 result.getOrchestrationState().stream()
-                    .map(state -> String.format("\nID: %s, Status: %s, Created: %s", 
-                        state.getInstanceId(), 
-                        state.getRuntimeStatus(), 
+                    .map(state -> String.format("\nID: %s, Status: %s, Created: %s",
+                        state.getInstanceId(),
+                        state.getRuntimeStatus(),
                         state.getCreatedAt()))
                     .collect(Collectors.joining(", ")));
 
@@ -1292,7 +1353,7 @@ public class IntegrationTests extends IntegrationTestBase {
                 client.scheduleNewOrchestrationInstance(orchestratorName, null, instanceId);
             });
             thread.start();
-            
+
             assertThrows(TimeoutException.class, () -> client.waitForInstanceStart(instanceId, Duration.ofSeconds(2)) );
         }
     }
@@ -1680,8 +1741,8 @@ public class IntegrationTests extends IntegrationTestBase {
 
         DurableTaskGrpcWorker worker = this.createWorkerBuilder()
                 .addOrchestrator(orchestratorName, ctx -> {
-                    ctx.callActivity(retryActivityName,null,taskOptions).await();    
-                    ctx.callActivity(retryActivityName,null,taskOptions).await();    
+                    ctx.callActivity(retryActivityName,null,taskOptions).await();
+                    ctx.callActivity(retryActivityName,null,taskOptions).await();
                     ctx.complete(true);
                 })
                 .addActivity(retryActivityName, ctx -> {
