@@ -14,12 +14,9 @@ import javax.annotation.Nullable;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
-import java.time.temporal.TemporalField;
 import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -659,7 +656,7 @@ final class TaskOrchestrationExecutor {
                     .build());
 
             if (!this.isReplaying) {
-                logger.finer("Creating Instant Timer with id: " + id + " fireAt: " + fireAt);
+                logger.finer(() -> String.format("Creating Instant Timer with id: %s, fireAt: %s ", id, fireAt));
             }
 
             CompletableTask<Void> timerTask = new CompletableTask<>();
@@ -700,8 +697,10 @@ final class TaskOrchestrationExecutor {
             }
 
             if (!this.isReplaying) {
-                // TODO: Log timer fired, including the scheduled fire-time
-                this.logger.finer("Firing timer by completing task: "+timerEventId+" expected fire at time: "+ Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(), timerFiredEvent.getFireAt().getNanos()));
+                this.logger.finer(() ->
+                        String.format("Firing timer by completing task: %s expected fire at time: %s", timerEventId,
+                        Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(),
+                                timerFiredEvent.getFireAt().getNanos())));
             }
 
             CompletableTask<?> task = record.getTask();
