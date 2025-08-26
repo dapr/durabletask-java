@@ -88,10 +88,10 @@ final class TaskOrchestrationExecutor {
         private String appId;
 
         // LinkedHashMap to maintain insertion order when returning the list of pending actions
-        private final LinkedHashMap<Integer, OrchestratorAction> pendingActions = new LinkedHashMap<>();
-        private final HashMap<Integer, TaskRecord<?>> openTasks = new HashMap<>();
-        private final LinkedHashMap<String, Queue<TaskRecord<?>>> outstandingEvents = new LinkedHashMap<>();
-        private final LinkedList<HistoryEvent> unprocessedEvents = new LinkedList<>();
+        private final Map<Integer, OrchestratorAction> pendingActions = new LinkedHashMap<>();
+        private final Map<Integer, TaskRecord<?>> openTasks = new HashMap<>();
+        private final Map<String, Queue<TaskRecord<?>>> outstandingEvents = new LinkedHashMap<>();
+        private final List<HistoryEvent> unprocessedEvents = new LinkedList<>();
         private final Queue<HistoryEvent> eventsWhileSuspended = new ArrayDeque<>();
         private final DataConverter dataConverter = TaskOrchestrationExecutor.this.dataConverter;
         private final Duration maximumTimerInterval = TaskOrchestrationExecutor.this.maximumTimerInterval;
@@ -303,12 +303,10 @@ final class TaskOrchestrationExecutor {
             }
             TaskFactory<V> taskFactory = () -> {
                 int id = this.sequenceNumber++;
-                
                 ScheduleTaskAction scheduleTaskAction = scheduleTaskBuilder.build();
                 OrchestratorAction.Builder actionBuilder = OrchestratorAction.newBuilder()
                         .setId(id)
                         .setScheduleTask(scheduleTaskBuilder);
-                
                 if (options != null && options.hasAppID()) {
                     String targetAppId = options.getAppID();
                     TaskRouter actionRouter = TaskRouter.newBuilder()
@@ -317,7 +315,6 @@ final class TaskOrchestrationExecutor {
                         .build();
                     actionBuilder.setRouter(actionRouter);
                 }
-                
                 this.pendingActions.put(id, actionBuilder.build());
 
                 if (!this.isReplaying) {
@@ -410,7 +407,7 @@ final class TaskOrchestrationExecutor {
             if (input instanceof TaskOptions) {
                 throw new IllegalArgumentException("TaskOptions cannot be used as an input. Did you call the wrong method overload?");
             }
-            
+
             String serializedInput = this.dataConverter.serialize(input);
             CreateSubOrchestrationAction.Builder createSubOrchestrationActionBuilder = CreateSubOrchestrationAction.newBuilder().setName(name);
             if (serializedInput != null) {
@@ -466,7 +463,7 @@ final class TaskOrchestrationExecutor {
             int id = this.sequenceNumber++;
 
             CompletableTask<V> eventTask = new ExternalEventTask<>(name, id, timeout);
-            
+
             // Check for a previously received event with the same name
             for (HistoryEvent e : this.unprocessedEvents) {
                 EventRaisedEvent existing = e.getEventRaised();
@@ -648,8 +645,7 @@ final class TaskOrchestrationExecutor {
         }
 
         private Task<Void> createTimer(Instant finalFireAt) {
-            TimerTask timer = new TimerTask(finalFireAt);
-            return timer;
+            return new TimerTask(finalFireAt);
         }
 
         private CompletableTask<Void> createInstantTimer(int id, Instant fireAt) {
@@ -660,7 +656,7 @@ final class TaskOrchestrationExecutor {
                     .build());
 
             if (!this.isReplaying) {
-                // TODO: Log timer creation, including the expected fire-time
+                logger.finer(() -> String.format("Creating Instant Timer with id: %s, fireAt: %s ", id, fireAt));
             }
 
             CompletableTask<Void> timerTask = new CompletableTask<>();
@@ -701,7 +697,10 @@ final class TaskOrchestrationExecutor {
             }
 
             if (!this.isReplaying) {
-                // TODO: Log timer fired, including the scheduled fire-time
+                this.logger.finer(() ->
+                        String.format("Firing timer by completing task: %s expected fire at time: %s", timerEventId,
+                        Instant.ofEpochSecond(timerFiredEvent.getFireAt().getSeconds(),
+                                timerFiredEvent.getFireAt().getNanos())));
             }
 
             CompletableTask<?> task = record.getTask();
@@ -851,7 +850,7 @@ final class TaskOrchestrationExecutor {
 
             externalEvents.forEach(builder::addCarryoverEvents);
         }
-        
+
         private boolean waitingForEvents() {
             return this.outstandingEvents.size() > 0;
         }
@@ -894,7 +893,7 @@ final class TaskOrchestrationExecutor {
                         if (factory == null) {
                             throw new IllegalStateException("No factory found for orchestrator: " + executionStarted.getName());
                         }
-                        
+
                         TaskOrchestration orchestrator = factory.create();
                         orchestrator.run(this);
                         break;
@@ -1038,11 +1037,12 @@ final class TaskOrchestrationExecutor {
             // if necessary. Otherwise, we return and no more sub-timers are created.
             private CompletableFuture<Void> createTimerChain(Instant finalFireAt, CompletableFuture<Void> currentFuture) {
                 return currentFuture.thenRun(() -> {
-                    if (currentInstant.compareTo(finalFireAt) > 0) {
+                    Instant currentInstsanceMinusNanos = currentInstant.minusNanos(currentInstant.getNano());
+                    Instant finalFireAtMinusNanos = finalFireAt.minusNanos(finalFireAt.getNano());
+                    if (currentInstsanceMinusNanos.compareTo(finalFireAtMinusNanos) >= 0) {
                         return;
                     }
                     Task<Void> nextTimer = createTimerTask(finalFireAt);
-
                     createTimerChain(finalFireAt, nextTimer.future);
                 });
             }
@@ -1062,7 +1062,9 @@ final class TaskOrchestrationExecutor {
 
             private void handleSubTimerSuccess() {
                 // check if it is the last timer
-                if (currentInstant.compareTo(finalFireAt) >= 0) {
+                Instant currentInstantMinusNanos = currentInstant.minusNanos(currentInstant.getNano());
+                Instant finalFireAtMinusNanos = finalFireAt.minusNanos(finalFireAt.getNano());
+                if (currentInstantMinusNanos.compareTo(finalFireAtMinusNanos) >= 0) {
                     this.complete(null);
                 }
             }
