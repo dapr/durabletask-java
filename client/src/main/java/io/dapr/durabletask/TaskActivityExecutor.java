@@ -19,7 +19,7 @@ final class TaskActivityExecutor {
         this.logger = logger;
     }
 
-    public String execute(String taskName, String input, String taskExecutionId, int taskId) throws Throwable {
+    public String execute(String taskName, String input, String taskExecutionId, int taskId, String parentTraceId) throws Throwable {
         TaskActivityFactory factory = this.activityFactories.get(taskName);
         if (factory == null) {
             throw new IllegalStateException(
@@ -32,7 +32,7 @@ final class TaskActivityExecutor {
                     String.format("The task factory '%s' returned a null TaskActivity object.", taskName));
         }
 
-        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input, taskExecutionId, taskId);
+        TaskActivityContextImpl context = new TaskActivityContextImpl(taskName, input, taskExecutionId, taskId, parentTraceId);
 
         // Unhandled exceptions are allowed to escape
         Object output = activity.run(context);
@@ -48,14 +48,16 @@ final class TaskActivityExecutor {
         private final String rawInput;
         private final String taskExecutionId;
         private final int taskId;
+        private final String parentTraceId;
 
         private final DataConverter dataConverter = TaskActivityExecutor.this.dataConverter;
 
-        public TaskActivityContextImpl(String activityName, String rawInput, String taskExecutionId, int taskId) {
+        public TaskActivityContextImpl(String activityName, String rawInput, String taskExecutionId, int taskId, String parentTraceId) {
             this.name = activityName;
             this.rawInput = rawInput;
             this.taskExecutionId = taskExecutionId;
             this.taskId = taskId;
+            this.parentTraceId = parentTraceId;
         }
 
         @Override
@@ -80,6 +82,11 @@ final class TaskActivityExecutor {
         @Override
         public int getTaskId() {
             return this.taskId;
+        }
+
+        @Override
+        public String getParentTraceId() {
+            return this.parentTraceId;
         }
     }
 }

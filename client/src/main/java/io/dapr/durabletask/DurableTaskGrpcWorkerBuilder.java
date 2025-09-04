@@ -2,7 +2,9 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
+import io.dapr.durabletask.interceptors.DaprWorkflowClientGrpcInterceptors;
 import io.grpc.Channel;
+import io.opentelemetry.context.Context;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -21,6 +23,7 @@ public final class DurableTaskGrpcWorkerBuilder {
     Duration maximumTimerInterval;
     ExecutorService executorService;
     String appId; // App ID for cross-app routing
+    DaprWorkflowClientGrpcInterceptors interceptors; 
 
     /**
      * Adds an orchestration factory to be used by the constructed {@link DurableTaskGrpcWorker}.
@@ -140,6 +143,11 @@ public final class DurableTaskGrpcWorkerBuilder {
      */
     public DurableTaskGrpcWorkerBuilder appId(String appId) {
         this.appId = appId;
+        return this;
+    }
+  
+    public DurableTaskGrpcWorkerBuilder interceptors(DaprWorkflowClientGrpcInterceptors interceptors){
+        this.interceptors = interceptors;
         return this;
     }
 

@@ -2,7 +2,12 @@
 // Licensed under the MIT License.
 package io.dapr.durabletask;
 
+import io.dapr.durabletask.interceptors.DaprWorkflowClientGrpcInterceptors;
 import io.grpc.Channel;
+import io.grpc.ClientInterceptor;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Builder class for constructing new {@link DurableTaskClient} objects that communicate with a sidecar process
@@ -16,6 +21,7 @@ public final class DurableTaskGrpcClientBuilder {
     String tlsCertPath;
     String tlsKeyPath;
     boolean insecure;
+    DaprWorkflowClientGrpcInterceptors interceptors;
 
     /**
      * Sets the {@link DataConverter} to use for converting serializable data payloads.
@@ -103,6 +109,11 @@ public final class DurableTaskGrpcClientBuilder {
      */
     public DurableTaskGrpcClientBuilder insecure(boolean insecure) {
         this.insecure = insecure;
+        return this;
+    }
+
+    public DurableTaskGrpcClientBuilder interceptor(DaprWorkflowClientGrpcInterceptors interceptors){
+        this.interceptors = interceptors;
         return this;
     }
 

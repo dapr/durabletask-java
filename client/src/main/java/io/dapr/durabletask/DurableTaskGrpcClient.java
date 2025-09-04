@@ -8,10 +8,14 @@ import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
 
+
+import io.dapr.durabletask.interceptors.DaprWorkflowClientGrpcInterceptors;
 import io.grpc.*;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import io.opentelemetry.context.Context;
+
 import java.io.FileInputStream;
 import java.io.InputStream;
 
@@ -38,6 +42,7 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
     private final DataConverter dataConverter;
     private final ManagedChannel managedSidecarChannel;
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
+    private final DaprWorkflowClientGrpcInterceptors interceptors;
 
     DurableTaskGrpcClient(DurableTaskGrpcClientBuilder builder) {
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
@@ -112,6 +117,7 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
         }
 
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
+        this.interceptors = builder.interceptors;
     }
 
     /**
@@ -131,6 +137,53 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
                 // https://docs.oracle.com/javase/7/docs/api/java/lang/AutoCloseable.html
             }
         }
+    }
+
+    /*
+     * @salaboy TODO: refactor to avoid duplicated code
+     */
+    @Override
+    public String scheduleNewOrchestrationInstance(
+            String orchestratorName,
+            NewOrchestrationInstanceOptions options, Context context) {
+        if (orchestratorName == null || orchestratorName.length() == 0) {
+            throw new IllegalArgumentException("A non-empty orchestrator name must be specified.");
+        }
+
+        Helpers.throwIfArgumentNull(options, "options");
+
+        CreateInstanceRequest.Builder builder = CreateInstanceRequest.newBuilder();
+        builder.setName(orchestratorName);
+
+        String instanceId = options.getInstanceId();
+        if (instanceId == null) {
+            instanceId = UUID.randomUUID().toString();
+        }
+        builder.setInstanceId(instanceId);
+
+        String version = options.getVersion();
+        if (version != null) {
+            builder.setVersion(StringValue.of(version));
+        }
+
+        Object input = options.getInput();
+        if (input != null) {
+            String serializedInput = this.dataConverter.serialize(input);
+            builder.setInput(StringValue.of(serializedInput));
+        }
+
+        Instant startTime = options.getStartTime();
+        if (startTime != null) {
+            Timestamp ts = DataConverter.getTimestampFromInstant(startTime);
+            builder.setScheduledStartTimestamp(ts);
+        }
+
+        CreateInstanceRequest request = builder.build();
+
+        CreateInstanceResponse response = interceptors.intercept(this.sidecarClient, context)
+                .startInstance(request);
+        return response.getInstanceId();
+
     }
 
     @Override
@@ -170,12 +223,25 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
         }
 
         CreateInstanceRequest request = builder.build();
-        CreateInstanceResponse response = this.sidecarClient.startInstance(request);
+
+        CreateInstanceResponse response = interceptors.intercept(this.sidecarClient)
+                .startInstance(request);
         return response.getInstanceId();
     }
 
     @Override
     public void raiseEvent(String instanceId, String eventName, Object eventPayload) {
+        RaiseEventRequest request = raiseEventRequest(instanceId, eventName, eventPayload);
+        this.sidecarClient.raiseEvent(request);
+    }
+
+    @Override
+    public void raiseEvent(String instanceId, String eventName, Object eventPayload, Context context) {
+        RaiseEventRequest request = raiseEventRequest(instanceId, eventName, eventPayload);
+        interceptors.intercept(this.sidecarClient, context).raiseEvent(request);
+    }
+
+    private RaiseEventRequest raiseEventRequest(String instanceId, String eventName, Object eventPayload){
         Helpers.throwIfArgumentNull(instanceId, "instanceId");
         Helpers.throwIfArgumentNull(eventName, "eventName");
 
@@ -186,10 +252,12 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
             String serializedPayload = this.dataConverter.serialize(eventPayload);
             builder.setInput(StringValue.of(serializedPayload));
         }
-
-        RaiseEventRequest request = builder.build();
-        this.sidecarClient.raiseEvent(request);
+        return builder.build();
     }
+
+
+
+
 
     @Override
     public OrchestrationMetadata getInstanceMetadata(String instanceId, boolean getInputsAndOutputs) {
@@ -295,7 +363,7 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
 
     @Override
     public void createTaskHub(boolean recreateIfExists) {
-        this.sidecarClient.createTaskHub(CreateTaskHubRequest.newBuilder().setRecreateIfExists(recreateIfExists).build());
+        interceptors.intercept(this.sidecarClient).createTaskHub(CreateTaskHubRequest.newBuilder().setRecreateIfExists(recreateIfExists).build());
     }
 
     @Override

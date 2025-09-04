@@ -34,4 +34,11 @@ public interface TaskActivityContext {
      * @return the task id of the current task activity
      */
     int getTaskId();
+
+    /**
+     * Get the task parent trace id for Otel trace propagation.
+     * @return the task parent traceId
+     *
+     */
+    String getParentTraceId();
 }
