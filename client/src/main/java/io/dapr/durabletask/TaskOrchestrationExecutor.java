@@ -492,7 +492,7 @@ final class TaskOrchestrationExecutor {
             // If a non-infinite timeout is specified, schedule an internal durable timer.
             // If the timer expires and the external event task hasn't yet completed, we'll cancel the task.
             if (hasTimeout) {
-                this.createTimer(timeout).future.thenRun(() -> {
+                this.createTimer(name, timeout).future.thenRun(() -> {
                     if (!eventTask.isDone()) {
                         // Book-keeping - remove the task record for the canceled task
                         eventQueue.removeIf(t -> t.task == eventTask);
@@ -632,7 +632,26 @@ final class TaskOrchestrationExecutor {
             Helpers.throwIfArgumentNull(duration, "duration");
 
             Instant finalFireAt = this.currentInstant.plus(duration);
-            return createTimer(finalFireAt);
+            return createTimer("", finalFireAt);
+        }
+
+        public Task<Void> createTimer(String name, Duration duration) {
+            Helpers.throwIfOrchestratorComplete(this.isComplete);
+            Helpers.throwIfArgumentNull(duration, "duration");
+            Helpers.throwIfArgumentNull(name, "name");
+
+            Instant finalFireAt = this.currentInstant.plus(duration);
+            return createTimer(name, finalFireAt);
+        }
+
+        @Override
+        public Task<Void> createTimer(String name, ZonedDateTime zonedDateTime) {
+            Helpers.throwIfOrchestratorComplete(this.isComplete);
+            Helpers.throwIfArgumentNull(zonedDateTime, "zonedDateTime");
+            Helpers.throwIfArgumentNull(name, "name");
+
+            Instant finalFireAt = zonedDateTime.toInstant();
+            return createTimer(name, finalFireAt);
         }
 
         @Override
@@ -641,18 +660,19 @@ final class TaskOrchestrationExecutor {
             Helpers.throwIfArgumentNull(zonedDateTime, "zonedDateTime");
 
             Instant finalFireAt = zonedDateTime.toInstant();
-            return createTimer(finalFireAt);
+            return createTimer("", finalFireAt);
         }
 
-        private Task<Void> createTimer(Instant finalFireAt) {
-            return new TimerTask(finalFireAt);
+        private Task<Void> createTimer(String name, Instant finalFireAt) {
+            return new TimerTask(name, finalFireAt);
         }
 
-        private CompletableTask<Void> createInstantTimer(int id, Instant fireAt) {
+        private CompletableTask<Void> createInstantTimer(String name, int id, Instant fireAt) {
             Timestamp ts = DataConverter.getTimestampFromInstant(fireAt);
             this.pendingActions.put(id, OrchestratorAction.newBuilder()
                     .setId(id)
-                    .setCreateTimer(CreateTimerAction.newBuilder().setFireAt(ts))
+                    .setCreateTimer(CreateTimerAction.newBuilder()
+                            .setName(name + "-" + id).setFireAt(ts))
                     .build());
 
             if (!this.isReplaying) {
@@ -1022,10 +1042,10 @@ final class TaskOrchestrationExecutor {
             private Instant finalFireAt;
             CompletableTask<Void> task;
 
-            public TimerTask(Instant finalFireAt) {
+            public TimerTask(String name, Instant finalFireAt) {
                 super();
-                CompletableTask<Void> firstTimer = createTimerTask(finalFireAt);
-                CompletableFuture<Void> timerChain = createTimerChain(finalFireAt, firstTimer.future);
+                CompletableTask<Void> firstTimer = createTimerTask(name, finalFireAt);
+                CompletableFuture<Void> timerChain = createTimerChain(name, finalFireAt, firstTimer.future);
                 this.task = new CompletableTask<>(timerChain);
                 this.finalFireAt = finalFireAt;
             }
@@ -1035,26 +1055,26 @@ final class TaskOrchestrationExecutor {
             // currentFuture completes, we check if we have not yet reached finalFireAt. If that is the case, we create a new sub-timer
             // task and make a recursive call on that new sub-timer task so that once it completes, another sub-timer task is created
             // if necessary. Otherwise, we return and no more sub-timers are created.
-            private CompletableFuture<Void> createTimerChain(Instant finalFireAt, CompletableFuture<Void> currentFuture) {
+            private CompletableFuture<Void> createTimerChain(String name, Instant finalFireAt, CompletableFuture<Void> currentFuture) {
                 return currentFuture.thenRun(() -> {
                     Instant currentInstsanceMinusNanos = currentInstant.minusNanos(currentInstant.getNano());
                     Instant finalFireAtMinusNanos = finalFireAt.minusNanos(finalFireAt.getNano());
                     if (currentInstsanceMinusNanos.compareTo(finalFireAtMinusNanos) >= 0) {
                         return;
                     }
-                    Task<Void> nextTimer = createTimerTask(finalFireAt);
-                    createTimerChain(finalFireAt, nextTimer.future);
+                    Task<Void> nextTimer = createTimerTask(name + "-next", finalFireAt);
+                    createTimerChain(name, finalFireAt, nextTimer.future);
                 });
             }
 
-            private CompletableTask<Void> createTimerTask(Instant finalFireAt) {
+            private CompletableTask<Void> createTimerTask(String name, Instant finalFireAt) {
                 CompletableTask<Void> nextTimer;
                 Duration remainingTime = Duration.between(currentInstant, finalFireAt);
                 if (remainingTime.compareTo(maximumTimerInterval) > 0) {
                     Instant nextFireAt = currentInstant.plus(maximumTimerInterval);
-                    nextTimer = createInstantTimer(sequenceNumber++, nextFireAt);
+                    nextTimer = createInstantTimer(name, sequenceNumber++, nextFireAt);
                 } else {
-                    nextTimer = createInstantTimer(sequenceNumber++, finalFireAt);
+                    nextTimer = createInstantTimer(name, sequenceNumber++, finalFireAt);
                 }
                 nextTimer.setParentTask(this);
                 return nextTimer;
@@ -1185,7 +1205,7 @@ final class TaskOrchestrationExecutor {
                 Duration delay = this.getNextDelay();
                 if (!delay.isZero() && !delay.isNegative()) {
                     // Use a durable timer to create the delay between retries
-                    this.context.createTimer(delay).await();
+                    this.context.createTimer(getName() + "-retry",delay).await();
                 }
 
                 this.totalRetryTime = Duration.between(this.startTime, this.context.getCurrentInstant());
