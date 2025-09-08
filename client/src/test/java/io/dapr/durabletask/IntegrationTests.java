@@ -76,6 +76,7 @@ public class IntegrationTests extends IntegrationTestBase {
                 defaultTimeout,
                 true);
 
+
             assertNotNull(instance);
             assertEquals(OrchestrationRuntimeStatus.COMPLETED, instance.getRuntimeStatus());
             assertEquals(input, instance.readInputAs(String.class));
@@ -174,6 +175,8 @@ public class IntegrationTests extends IntegrationTestBase {
 
 
         }
+
+
     }
 
     @Test
