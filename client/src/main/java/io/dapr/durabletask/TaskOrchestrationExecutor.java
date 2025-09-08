@@ -632,7 +632,7 @@ final class TaskOrchestrationExecutor {
             Helpers.throwIfArgumentNull(duration, "duration");
 
             Instant finalFireAt = this.currentInstant.plus(duration);
-            return createTimer(orchestratorName, finalFireAt);
+            return createTimer("", finalFireAt);
         }
 
         public Task<Void> createTimer(String name, Duration duration) {
@@ -660,7 +660,7 @@ final class TaskOrchestrationExecutor {
             Helpers.throwIfArgumentNull(zonedDateTime, "zonedDateTime");
 
             Instant finalFireAt = zonedDateTime.toInstant();
-            return createTimer(orchestratorName + "-timer", finalFireAt);
+            return createTimer("", finalFireAt);
         }
 
         private Task<Void> createTimer(String name, Instant finalFireAt) {
@@ -672,7 +672,7 @@ final class TaskOrchestrationExecutor {
             this.pendingActions.put(id, OrchestratorAction.newBuilder()
                     .setId(id)
                     .setCreateTimer(CreateTimerAction.newBuilder()
-                            .setName(name + "-timer-" + id).setFireAt(ts))
+                            .setName(name + "-" + id).setFireAt(ts))
                     .build());
 
             if (!this.isReplaying) {
