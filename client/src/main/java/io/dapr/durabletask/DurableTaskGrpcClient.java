@@ -4,6 +4,8 @@ package io.dapr.durabletask;
 
 import com.google.protobuf.StringValue;
 import com.google.protobuf.Timestamp;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import io.dapr.durabletask.implementation.protobuf.OrchestratorService.*;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc;
 import io.dapr.durabletask.implementation.protobuf.TaskHubSidecarServiceGrpc.*;
@@ -38,6 +40,7 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
     private final DataConverter dataConverter;
     private final ManagedChannel managedSidecarChannel;
     private final TaskHubSidecarServiceBlockingStub sidecarClient;
+    private final Tracer tracer;
 
     DurableTaskGrpcClient(DurableTaskGrpcClientBuilder builder) {
         this.dataConverter = builder.dataConverter != null ? builder.dataConverter : new JacksonDataConverter();
@@ -109,8 +112,9 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
             // Need to keep track of this channel so we can dispose it on close()
             this.managedSidecarChannel = channelBuilder.build();
             sidecarGrpcChannel = this.managedSidecarChannel;
-        }
 
+        }
+        this.tracer = builder.tracer;
         this.sidecarClient = TaskHubSidecarServiceGrpc.newBlockingStub(sidecarGrpcChannel);
     }
 
@@ -169,6 +173,23 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
             builder.setScheduledStartTimestamp(ts);
         }
 
+        if (tracer != null) {
+            Span span = tracer.spanBuilder("dapr.workflow.grpc.startInstance")
+              .startSpan();
+            try {
+              TraceContext.Builder traceContextBuilder = TraceContext.newBuilder();
+              traceContextBuilder.setTraceParent(span.getSpanContext().getTraceId());
+              traceContextBuilder.setSpanID(span.getSpanContext().getSpanId());
+              builder.setParentTraceContext(traceContextBuilder.build());
+
+              CreateInstanceRequest request = builder.build();
+              CreateInstanceResponse response = this.sidecarClient.startInstance(request);
+              return response.getInstanceId();
+            } finally {
+              span.end();
+            }
+        }
+
         CreateInstanceRequest request = builder.build();
         CreateInstanceResponse response = this.sidecarClient.startInstance(request);
         return response.getInstanceId();
@@ -180,11 +201,27 @@ public final class DurableTaskGrpcClient extends DurableTaskClient {
         Helpers.throwIfArgumentNull(eventName, "eventName");
 
         RaiseEventRequest.Builder builder = RaiseEventRequest.newBuilder()
-                .setInstanceId(instanceId)
-                .setName(eventName);
+            .setInstanceId(instanceId)
+            .setName(eventName);
         if (eventPayload != null) {
-            String serializedPayload = this.dataConverter.serialize(eventPayload);
-            builder.setInput(StringValue.of(serializedPayload));
+          String serializedPayload = this.dataConverter.serialize(eventPayload);
+          builder.setInput(StringValue.of(serializedPayload));
+        }
+
+        if (tracer != null) {
+          Span span = tracer.spanBuilder("dapr.workflow.grpc.raiseEvent")
+              .startSpan();
+          try {
+//            TraceContext.Builder traceContextBuilder = TraceContext.newBuilder();
+//            traceContextBuilder.setTraceParent(span.getSpanContext().getTraceId());
+//            traceContextBuilder.setSpanID(span.getSpanContext().getSpanId());
+//            builder.setParentTraceContext(traceContextBuilder.build());
+
+            RaiseEventRequest request = builder.build();
+            this.sidecarClient.raiseEvent(request);
+          } finally {
+            span.end();
+          }
         }
 
         RaiseEventRequest request = builder.build();

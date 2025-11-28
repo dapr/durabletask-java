@@ -477,6 +477,17 @@ message PurgeInstancesRequest {
         PurgeInstanceFilter purgeInstanceFilter = 2;
     }
     bool recursive = 3;
+
+    // force will force a purge of a workflow, regardless of its current
+    // runtime state, or whether an active worker can process it, the backend
+    // will attempt to delete it anyway. This neccessarily means the purging is
+    // executed out side of the workflow state machine, and therefore, can lead
+    // to corrupt state or broken workflow execution. Usage of this should
+    // _only_ be used when the client knows the workflow is not being currently
+    // processed. It is highly recommended to avoid using this flag unless
+    // absolutely necessary.
+    // Defaults to false.
+    optional bool force = 4;
 }
 
 message PurgeInstanceFilter {
@@ -739,6 +750,9 @@ service TaskHubSidecarService {
 
     // Rerun a Workflow from a specific event ID of a workflow instance.
     rpc RerunWorkflowFromEvent(RerunWorkflowFromEventRequest) returns (RerunWorkflowFromEventResponse);
+
+    rpc ListInstanceIDs (ListInstanceIDsRequest) returns (ListInstanceIDsResponse);
+    rpc GetInstanceHistory (GetInstanceHistoryRequest) returns (GetInstanceHistoryResponse);
 }
 
 message GetWorkItemsRequest {
@@ -819,4 +833,37 @@ message RerunWorkflowFromEventRequest {
 // RerunWorkflowFromEvent.
 message RerunWorkflowFromEventResponse {
     string newInstanceID = 1;
+}
+
+// ListInstanceIDsRequest is used to list all orchestration instances.
+message ListInstanceIDsRequest {
+    // continuationToken is the continuation token to use for pagination. This
+    // is the token which the next page should start from. If not given, the
+    // first page will be returned.
+    optional string continuationToken = 1;
+
+    // pageSize is the maximum number of instances to return for this page. If
+    // not given, all instances will be attempted to be returned.
+    optional uint32 pageSize = 2;
+}
+
+// ListInstanceIDsResponse is the response to executing ListInstanceIDs.
+message ListInstanceIDsResponse {
+  // instanceIds is the list of instance IDs returned.
+  repeated string instanceIds = 1;
+
+  // continuationToken is the continuation token to use for pagination. If
+  // there are no more pages, this will be null.
+  optional string continuationToken = 2;
+}
+
+// GetInstanceHistoryRequest is used to get the full history of an
+// orchestration instance.
+message GetInstanceHistoryRequest {
+    string instanceId = 1;
+}
+
+// GetInstanceHistoryResponse is the response to executing GetInstanceHistory.
+message GetInstanceHistoryResponse {
+    repeated HistoryEvent events = 1;
 }

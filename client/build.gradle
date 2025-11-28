@@ -11,12 +11,14 @@ plugins {
 }
 
 group 'io.dapr'
-version = '1.5.10'
+version = '1.5.11-SNAPSHOT'
 archivesBaseName = 'durabletask-client'
 
 def grpcVersion = '1.69.0'
 def protocVersion = '3.25.5'
 def jacksonVersion = '2.15.3'
+def micrometerVersion = '1.16.0'
+def otelVersion = '1.56.0'
 // Java 11 is now the minimum required version for both compilation and testing
 
 dependencies {
@@ -25,6 +27,9 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     implementation 'com.google.protobuf:protobuf-java:3.25.5'
+    implementation "io.micrometer:micrometer-observation:${micrometerVersion}"
+    implementation "io.opentelemetry:opentelemetry-api:${otelVersion}"
+    implementation "io.opentelemetry:opentelemetry-context:${otelVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     compileOnly "org.apache.tomcat:annotations-api:6.0.53"
